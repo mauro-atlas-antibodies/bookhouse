@@ -52,7 +52,8 @@ except ImportError as e:
     advocate = requests
     UnacceptableAddressException = MissingSchema = BaseException
 
-from . import calibre_db, cli_param
+from . import cli_param
+from . import get_current_library_db
 from .string_helper import strip_whitespaces
 from .tasks.convert import TaskConvert
 from . import logger, config, db, ub, fs
@@ -82,6 +83,7 @@ except (ImportError, RuntimeError) as e:
 
 # Convert existing book entry to new format
 def convert_book_format(book_id, calibre_path, old_book_format, new_book_format, user_id, ereader_mail=None):
+    calibre_db = get_current_library_db()
     book = calibre_db.get_book(book_id)
     data = calibre_db.get_book_format(book.id, old_book_format)
     if not data:
@@ -217,6 +219,7 @@ def check_read_formats(entry):
 # 3: If Pdf file is existing, it's directly send to eReader email
 def send_mail(book_id, book_format, convert, ereader_mail, calibrepath, user_id):
     """Send email with attachments"""
+    calibre_db = get_current_library_db()
     book = calibre_db.get_book(book_id)
 
     if convert == 1:
@@ -307,6 +310,7 @@ def get_sorted_author(value):
 
 
 def edit_book_read_status(book_id, read_status=None):
+    calibre_db = get_current_library_db()
     if not config.config_read_column:
         book = ub.session.query(ub.ReadBook).filter(and_(ub.ReadBook.user_id == int(current_user.id),
                                                          ub.ReadBook.book_id == book_id)).first()
@@ -450,6 +454,7 @@ def rename_author_path(first_author, old_author_dir, renamed_author, calibre_pat
 # Moves files in file storage during author/title rename, or from temp dir to file storage
 def update_dir_structure_file(book_id, calibre_path, original_filepath, new_author, db_filename):
     # get book database entry from id, if original path overwrite source with original_filepath
+    calibre_db = get_current_library_db()
     local_book = calibre_db.get_book(book_id)
     if original_filepath:
         path = original_filepath
@@ -487,6 +492,7 @@ def update_dir_structure_file(book_id, calibre_path, original_filepath, new_auth
 
 
 def upload_new_file_gdrive(book_id, first_author, title, title_dir, original_filepath, filename_ext):
+    calibre_db = get_current_library_db()
     book = calibre_db.get_book(book_id)
     file_name = get_valid_filename(title, chars=42) + ' - ' + \
         get_valid_filename(first_author, chars=42) + filename_ext
@@ -498,6 +504,7 @@ def upload_new_file_gdrive(book_id, first_author, title, title_dir, original_fil
 
 
 def update_dir_structure_gdrive(book_id, first_author):
+    calibre_db = get_current_library_db()
     book = calibre_db.get_book(book_id)
 
     authordir = book.path.split('/')[0]
@@ -708,6 +715,7 @@ def update_dir_structure(book_id,
 
 
 def delete_book(book, calibrepath, book_format):
+    calibre_db = get_current_library_db()
     if not book_format:
         clear_cover_thumbnail_cache(book.id)  # here it breaks
         calibre_db.delete_dirty_metadata(book.id)
@@ -726,11 +734,13 @@ def get_cover_on_failure():
 
 
 def get_book_cover(book_id, resolution=None):
+    calibre_db = get_current_library_db()
     book = calibre_db.get_filtered_book(book_id, allow_show_archived=True)
     return get_book_cover_internal(book, resolution=resolution)
 
 
 def get_book_cover_with_uuid(book_uuid, resolution=None):
+    calibre_db = get_current_library_db()
     book = calibre_db.get_book_by_uuid(book_uuid)
     if not book:
         return  # allows kobo.HandleCoverImageRequest to proxy request
@@ -787,6 +797,7 @@ def get_book_cover_thumbnail(book, resolution):
 
 
 def get_series_thumbnail_on_failure(series_id, resolution):
+    calibre_db = get_current_library_db()
     book = (calibre_db.session
         .query(db.Books)
         .join(db.books_series_link)
@@ -990,6 +1001,7 @@ def do_download_file(book, book_format, client, data, headers):
 
 
 def do_kepubify_metadata_replace(book, file_path):
+    calibre_db = get_current_library_db()
     custom_columns = (calibre_db.session.query(db.CustomColumns)
                       .filter(db.CustomColumns.mark_for_delete == 0)
                       .filter(db.CustomColumns.datatype.notin_(db.cc_exceptions))
@@ -1104,6 +1116,7 @@ def check_valid_domain(domain_text):
 
 
 def get_download_link(book_id, book_format, client):
+    calibre_db = get_current_library_db()
     book_format = book_format.split(".")[0]
     book = calibre_db.get_filtered_book(book_id, allow_show_archived=True)
     if book:
