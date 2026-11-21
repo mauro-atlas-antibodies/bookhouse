@@ -17,7 +17,7 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='bookhouse_favicon.ico', v=4) }}">
     <link href="{{ url_for('static', filename='css/libs/bootstrap.min.css') }}" rel="stylesheet" media="screen">
     {% block header %}{% endblock %}
-    <link href="{{ url_for('static', filename='css/style.css', v=7) }}" rel="stylesheet" media="screen">
+    <link href="{{ url_for('static', filename='css/style.css', v=8) }}" rel="stylesheet" media="screen">
     <link href="{{ url_for('static', filename='css/upload.css') }}" rel="stylesheet" media="screen">
   </head>
   <body class="{{ page }} {{ bodyClass }} {{ g.color_scheme_class }}">
@@ -135,7 +135,7 @@
         {% if current_user.is_authenticated or g.allow_anonymous %}
         <div class="col-sm-2">
           <a class="bookhouse-side-logo-link hidden-xs" href="{{url_for('web.index')}}">
-            <img src="{{ url_for('static', filename='bookhouse_logo.jpg') }}" alt="{{instance}}"
+            <img src="{{ url_for('static', filename='bookhouse_logo_circle.png') }}" alt="{{instance}}"
                  class="bookhouse-side-logo" style="width:180px;max-width:180px;height:auto;display:block;">
           </a>
           {% if current_user.is_authenticated and not current_user.is_anonymous %}
