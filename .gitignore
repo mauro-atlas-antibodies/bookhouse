@@ -36,5 +36,8 @@ client_secrets.json
 gmail.json
 /.key
 
-.venv
-library
+
+.venv/
+.vscode/
+library/
+library-2/
