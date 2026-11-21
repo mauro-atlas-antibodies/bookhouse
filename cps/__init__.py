@@ -111,6 +111,19 @@ calibre_db = db.CalibreDB(app)
 # The main library reuses the legacy global calibre_db instance.
 lib_registries = {}
 
+
+def get_library_db(lib_id):
+    """Return the CalibreDB instance registered for a library id."""
+    return lib_registries.get(lib_id)
+
+
+def get_library_db_by_slug(slug):
+    """Return the CalibreDB instance registered for a library slug."""
+    lib = ub.get_library_by_slug(slug)
+    if lib is None:
+        return None
+    return lib_registries.get(lib.id)
+
 web_server = WebServer()
 
 updater_thread = Updater()
