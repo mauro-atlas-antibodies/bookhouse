@@ -29,7 +29,8 @@ from .cw_login import current_user
 from sqlalchemy.exc import InvalidRequestError, OperationalError
 from sqlalchemy.sql.expression import func, true
 
-from . import calibre_db, config, db, logger, ub
+from . import config, db, logger, ub
+from . import get_current_library_db
 from .render_template import render_title_template
 from .usermanagement import login_required_if_no_ano, user_login_required
 
@@ -41,6 +42,7 @@ shelf = Blueprint('shelf', __name__)
 @shelf.route("/shelf/add/<int:shelf_id>/<int:book_id>", methods=["POST"])
 @user_login_required
 def add_to_shelf(shelf_id, book_id):
+    calibre_db = get_current_library_db()
     xhr = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     shelf = ub.session.query(ub.Shelf).filter(ub.Shelf.id == shelf_id).first()
     if shelf is None:
@@ -305,6 +307,7 @@ def show_shelf(shelf_id, sort_param, page):
 @shelf.route("/shelf/order/<int:shelf_id>", methods=["GET", "POST"])
 @user_login_required
 def order_shelf(shelf_id):
+    calibre_db = get_current_library_db()
     shelf = ub.session.query(ub.Shelf).filter(ub.Shelf.id == shelf_id).first()
     if shelf and check_shelf_view_permissions(shelf):
         if request.method == "POST":
@@ -452,6 +455,7 @@ def delete_shelf_helper(cur_shelf):
 
 
 def change_shelf_order(shelf_id, order):
+    calibre_db = get_current_library_db()
     result = calibre_db.session.query(db.Books).outerjoin(db.books_series_link,
                                                           db.Books.id == db.books_series_link.c.book)\
         .outerjoin(db.Series).join(ub.BookShelf, ub.BookShelf.book_id == db.Books.id) \
@@ -464,6 +468,7 @@ def change_shelf_order(shelf_id, order):
 
 
 def render_show_shelf(shelf_type, shelf_id, page_no, sort_param):
+    calibre_db = get_current_library_db()
     shelf = ub.session.query(ub.Shelf).filter(ub.Shelf.id == shelf_id).first()
     status = current_user.get_view_property("shelf", 'man')
     # check user is allowed to access shelf
