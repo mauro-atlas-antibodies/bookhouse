@@ -124,8 +124,8 @@ def get_sidebar_config(kwargs=None):
 
     # Bookhouse: expose the enabled libraries and current selection to templates
     try:
-        from . import get_current_library_slug
-        g.libraries = ub.get_enabled_libraries()
+        from . import get_current_library_slug, get_permitted_libraries
+        g.libraries = get_permitted_libraries()
         g.current_library_slug = get_current_library_slug()
         # resolve the full current Library row (main library when unset)
         g.current_library = None
@@ -133,10 +133,7 @@ def get_sidebar_config(kwargs=None):
             g.current_library = next(
                 (l for l in g.libraries if l.slug == g.current_library_slug), None)
         if g.current_library is None:
-            from . import main_library_id
-            g.current_library = next(
-                (l for l in g.libraries if l.id == main_library_id), None) or (
-                g.libraries[0] if g.libraries else None)
+            g.current_library = g.libraries[0] if g.libraries else None
     except Exception:
         g.libraries = []
         g.current_library_slug = None

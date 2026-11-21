@@ -45,10 +45,15 @@ basic = Blueprint('basic', __name__)
 @login_required_if_no_ano
 def select_library(slug=None):
     """Store the active library slug in the session; falls back to main."""
+    from . import get_permitted_libraries
     slug = slug or request.form.get('lib_slug') or ''
+    permitted_slugs = {lib.slug for lib in get_permitted_libraries()}
     lib = ub.get_library_by_slug(slug)
-    if lib is None:
+    if lib is None or lib.slug not in permitted_slugs:
+        # unknown, disabled, or not permitted: reset to main
         flask_session.pop('current_library_slug', None)
+        if lib is not None:
+            flash(_("You do not have access to that library"), category="error")
     else:
         flask_session['current_library_slug'] = lib.slug
     return redirect(url_for('web.index'))

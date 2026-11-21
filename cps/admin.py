@@ -47,7 +47,7 @@ from sqlalchemy.sql.expression import func, or_, text
 from . import constants, logger, helper, services, cli_param, themes
 from . import db, ub, web_server, config, updater_thread, gdriveutils, \
     kobo_sync_status, schedule
-from . import get_current_library_db
+from . import get_current_library_db, get_current_main_library_id
 from .helper import check_valid_domain, send_test_mail, reset_password, generate_password_hash, check_email, \
     valid_email, check_username
 from .embed_helper import get_calibre_binarypath
@@ -1599,6 +1599,9 @@ def edit_user(user_id):
                                  registered_oauth=oauth_check,
                                  mail_configured=config.get_mail_server_configured(),
                                  kobo_support=kobo_support,
+                                libraries=ub.get_all_libraries_ordered(),
+                                 user_library_ids=ub.get_user_library_ids(content.id),
+                                 main_library_id=get_current_main_library_id(),
                                  title=_("Edit User %(nick)s", nick=content.name),
                                  page="edituser")
 
@@ -2295,6 +2298,9 @@ def _handle_edit_user(to_save, content, languages, translations, kobo_support):
                                          registered_oauth=oauth_check,
                                          title=_("Edit User %(nick)s", nick=content.name),
                                          page="edituser")
+    # Bookhouse: store this user's library access grants
+    ub.set_user_libraries(content.id,
+                          [int(v) for v in request.form.getlist('access_library')])
     try:
         ub.session_commit()
         flash(_("User '%(nick)s' updated", nick=content.name), category="success")

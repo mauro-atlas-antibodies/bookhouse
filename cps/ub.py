@@ -592,7 +592,6 @@ def bootstrap_library(path):
 
 class Library(Base):
     __tablename__ = 'library'
-
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     slug = Column(String, nullable=False, unique=True)
@@ -603,6 +602,48 @@ class Library(Base):
     def __repr__(self):
         return '<Library %d:%r>' % (self.id, self.name)
     
+class UserLibrary(Base):
+    """Booksouse: per-user grants to access specific libraries."""
+    __tablename__ = 'user_library'
+
+    user_id = Column(Integer, ForeignKey('user.id'), primary_key=True)
+    library_id = Column(Integer, primary_key=True)
+
+    def __repr__(self):
+        return '<UserLibrary %r:%r>' % (self.user_id, self.library_id)
+
+
+# Bookhouse: per-user library access helpers
+def get_user_library_ids(user_id):
+    """Grant list for a user; empty means implicit 'main library only'."""
+    return [row[0] for row in
+            session.query(UserLibrary.library_id).filter(
+                UserLibrary.user_id == user_id).all()]
+
+
+def set_user_libraries(user_id, library_ids):
+    session.query(UserLibrary).filter(UserLibrary.user_id == user_id).delete()
+    for lid in set(library_ids or []):
+        session.add(UserLibrary(user_id=user_id, library_id=lid))
+    try:
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+
+def user_can_access_library(user_id, library_id, main_library_id, is_admin):
+    """Access check: admins always; no grants = main library only; else explicit."""
+    if user_id is None or library_id is None:
+        return False
+    if is_admin:
+        return True
+    grants = get_user_library_ids(user_id)
+    if not grants:
+        return library_id == main_library_id
+    return library_id in grants
+
+
 def add_library(name, slug, path, description=None, enabled=True):
     library = Library(
         name=name,

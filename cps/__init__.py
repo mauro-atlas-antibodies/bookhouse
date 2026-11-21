@@ -132,22 +132,66 @@ def get_current_library_db():
     """Resolve the CalibreDB instance for the current request.
 
     Uses the library slug stored in the Flask session (library switcher).
+    Per-user access is enforced: users without permission fall back to their
+    default library (main for users without grants, first granted otherwise).
     Falls back to the main library when unset or no longer enabled.
     """
     current_db = None
     try:
         from flask import session as flask_session
+        from .cw_login import current_user
         slug = flask_session.get('current_library_slug')
         if slug:
-            current_db = get_library_db_by_slug(slug)
+            lib = ub.get_library_by_slug(slug)
+            if lib is not None and user_permitted_for_library(current_user, lib):
+                current_db = lib_registries.get(lib.id)
     except RuntimeError:
         # outside request context (background tasks): main library
         pass
     if current_db is None:
+        # per-user fallback: main unless the user has explicit grants
+        try:
+            from .cw_login import current_user
+            from .constants import ROLE_ADMIN
+            is_admin = bool(current_user is not None and current_user.role is not None
+                            and (current_user.role & ROLE_ADMIN))
+            grants = ub.get_user_library_ids(current_user.id)
+        except Exception:
+            is_admin, grants = True, []
+        if (not is_admin) and grants:
+            fallback = next((get_library_db(gid) for gid in grants
+                             if get_library_db(gid) is not None), None)
+            if fallback is not None:
+                return fallback
         if lib_registries and main_library_id is not None:
             return get_library_db(main_library_id) or calibre_db
         return calibre_db
     return current_db
+
+
+def user_permitted_for_library(user, lib):
+    """Per-user access check (see ub.user_can_access_library)."""
+    from .constants import ROLE_ADMIN
+    try:
+        if user is None or user.id is None:
+            return False
+        is_admin = bool(user.role is not None and (user.role & ROLE_ADMIN))
+        return ub.user_can_access_library(user.id, lib.id, main_library_id, is_admin)
+    except Exception:
+        return False
+
+
+def get_permitted_libraries():
+    """Enabled libraries the current user may access (list of Library rows)."""
+    try:
+        from .cw_login import current_user
+    except Exception:
+        current_user = None
+    try:
+        libs = ub.get_enabled_libraries()
+    except Exception:
+        return []
+    return [lib for lib in libs if user_permitted_for_library(current_user, lib)]
 
 
 def get_current_library_id():
@@ -163,6 +207,11 @@ def get_current_library_slug():
     """Slug of the library currently selected in the session (or None)."""
     from flask import session as flask_session
     return flask_session.get('current_library_slug')
+
+
+def get_current_main_library_id():
+    """Id of the main (default) library."""
+    return main_library_id
 
 
 def register_library_in_registry(lib_id):

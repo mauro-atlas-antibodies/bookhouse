@@ -137,6 +137,22 @@
       <label for="kobo_only_shelves_sync">{{_('Sync only books in selected shelves with Kobo')}}</label>
     </div>
     {% endif %}
+    {# Bookhouse: per-user library access; checked libraries; none = main only (admins see all) #}
+    {% if not content.role_anonymous() %}
+    <div class="form-group">
+      <label>{{_('Library Access')}}</label>
+      <p class="text-muted">{{_('No selection grants access to the Main library only. Admin users always see all libraries.')}}</p>
+      {% for lib in libraries %}
+      <div class="checkbox">
+        <label>
+          <input type="checkbox" name="access_library" value="{{ lib.id }}"
+                 {% if lib.id == main_library_id or lib.id in user_library_ids %}checked{% endif %}>
+          {{ lib.name }}{% if lib.description %} <span class="text-muted">— {{ lib.description }}</span>{% endif %}
+        </label>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
     </div>
     <div class="col-sm-12">
       <div id="user_submit" class="btn btn-default">{{_('Save')}}</div>
