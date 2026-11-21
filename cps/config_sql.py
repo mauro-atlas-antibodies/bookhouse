@@ -418,6 +418,18 @@ class ConfigSQL(object):
         self.save()
 
     def get_book_path(self):
+        # Bookhouse: resolve the book-file path of the current library.
+        # CalibrationDB instances for non-main libraries carry their own
+        # config_calibre_dir (the library registry path); the main library
+        # keeps the legacy behavior (split dir support etc.).
+        from . import get_current_library_db
+        try:
+            cdb = get_current_library_db()
+        except Exception:
+            cdb = None
+        if cdb is not None and cdb.config_calibre_dir and \
+                cdb.config_calibre_dir != self.config_calibre_dir:
+            return cdb.config_calibre_dir
         return self.config_calibre_split_dir if self.config_calibre_split else self.config_calibre_dir
 
     def store_calibre_uuid(self, calibre_db, Library_table):
