@@ -25,7 +25,8 @@ from flask_babel import gettext as _
 from sqlalchemy.sql.expression import func, not_, and_, or_, text, true
 from sqlalchemy.sql.functions import coalesce
 
-from . import logger, db, calibre_db, config, ub
+from . import logger, db, config, ub
+from . import get_current_library_db
 from .string_helper import strip_whitespaces
 from .usermanagement import login_required_if_no_ano
 from .render_template import render_title_template
@@ -67,6 +68,7 @@ def advanced_search():
 @login_required_if_no_ano
 def advanced_search_form():
     # Build custom columns names
+    calibre_db = get_current_library_db()
     cc = calibre_db.get_cc_columns(config, filter_config_custom_read=True)
     return render_prepare_search_form(cc)
 
@@ -179,6 +181,7 @@ def adv_search_serie(q, include_series_inputs, exclude_series_inputs):
 
 
 def adv_search_shelf(q, include_shelf_inputs, exclude_shelf_inputs):
+    calibre_db = get_current_library_db()
     if len(include_shelf_inputs):
         in_shelf = (
             calibre_db.session.query(ub.BookShelf.id)
@@ -208,6 +211,7 @@ def extend_search_term(searchterm,
                        rating_low,
                        read_status,
                        ):
+    calibre_db = get_current_library_db()
     searchterm.extend((author_name.replace('|', ','), book_title, publisher))
     if pub_start:
         try:
@@ -253,6 +257,7 @@ def extend_search_term(searchterm,
 
 
 def render_adv_search_results(term, offset=None, order=None, limit=None):
+    calibre_db = get_current_library_db()
     sort = order[0] if order else [db.Books.sort]
     pagination = None
 
@@ -387,6 +392,7 @@ def render_adv_search_results(term, offset=None, order=None, limit=None):
 
 def render_prepare_search_form(cc):
     # prepare data for search-form
+    calibre_db = get_current_library_db()
     tags = calibre_db.session.query(db.Tags)\
         .join(db.books_tags_link)\
         .join(db.Books)\
@@ -417,6 +423,7 @@ def render_prepare_search_form(cc):
 
 
 def render_search_results(term, offset=None, order=None, limit=None):
+    calibre_db = get_current_library_db()
     if term:
         join = db.books_series_link, db.Books.id == db.books_series_link.c.book, db.Series
         entries, result_count, pagination = calibre_db.get_search_results(term,
