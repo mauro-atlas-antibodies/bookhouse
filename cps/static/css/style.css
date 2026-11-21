@@ -511,3 +511,8 @@ body > div.container-fluid  {
 .input-group .toggle-password {
   height: 40px;
 }
+
+/* Bookhouse: gap between search input and search button */
+.navbar-form.navbar-left .input-group-btn {
+  padding-left: 16px;
+}

@@ -8014,3 +8014,8 @@ div.comments[data-readmore] {
 }
 
 .dropdown-menu > .offscreen
+
+/* Bookhouse: gap between search input and search button */
+.navbar-form.navbar-left .input-group-btn {
+  padding-left: 16px;
+}
