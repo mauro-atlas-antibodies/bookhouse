@@ -310,51 +310,28 @@ def get_sorted_author(value):
 
 
 def edit_book_read_status(book_id, read_status=None):
-    calibre_db = get_current_library_db()
-    if not config.config_read_column:
-        book = ub.session.query(ub.ReadBook).filter(and_(ub.ReadBook.user_id == int(current_user.id),
-                                                         ub.ReadBook.book_id == book_id)).first()
-        if not book:
-            read_book = ub.ReadBook(user_id=current_user.id, book_id=book_id)
-            book = read_book
-        if read_status is None:
-            if book.read_status == ub.ReadBook.STATUS_FINISHED:
-                book.read_status = ub.ReadBook.STATUS_UNREAD
-            else:
-                book.read_status = ub.ReadBook.STATUS_FINISHED
+    # Bookhouse: Calibre libraries are strictly read-only, so read status is
+    # always stored in the Bookhouse app DB (ub.ReadBook). The legacy
+    # config.config_read_column (Calibre custom column) path was removed.
+    book = ub.session.query(ub.ReadBook).filter(and_(ub.ReadBook.user_id == int(current_user.id),
+                                                     ub.ReadBook.book_id == book_id)).first()
+    if not book:
+        read_book = ub.ReadBook(user_id=current_user.id, book_id=book_id)
+        book = read_book
+    if read_status is None:
+        if book.read_status == ub.ReadBook.STATUS_FINISHED:
+            book.read_status = ub.ReadBook.STATUS_UNREAD
         else:
-            book.read_status = ub.ReadBook.STATUS_FINISHED if read_status == True else ub.ReadBook.STATUS_UNREAD
-        if not book.kobo_reading_state:
-            kobo_reading_state = ub.KoboReadingState(user_id=current_user.id, book_id=book_id)
-            kobo_reading_state.current_bookmark = ub.KoboBookmark()
-            kobo_reading_state.statistics = ub.KoboStatistics()
-            book.kobo_reading_state = kobo_reading_state
-        ub.session.merge(book)
-        ub.session_commit("Book {} readbit toggled".format(book_id))
+            book.read_status = ub.ReadBook.STATUS_FINISHED
     else:
-        try:
-            calibre_db.create_functions(config)
-            book = calibre_db.get_filtered_book(book_id, True)
-            book_read_status = getattr(book, 'custom_column_' + str(config.config_read_column))
-            if len(book_read_status):
-                if read_status is None:
-                    book_read_status[0].value = not book_read_status[0].value
-                else:
-                    book_read_status[0].value = read_status is True
-                calibre_db.session.commit()
-            else:
-                cc_class = db.cc_classes[config.config_read_column]
-                new_cc = cc_class(value=read_status or 1, book=book_id)
-                calibre_db.session.add(new_cc)
-                calibre_db.session.commit()
-        except (KeyError, AttributeError, IndexError):
-            log.error(
-                "Custom Column No.{} does not exist in calibre database".format(config.config_read_column))
-            return "Custom Column No.{} does not exist in calibre database".format(config.config_read_column)
-        except (OperationalError, InvalidRequestError) as ex:
-            calibre_db.session.rollback()
-            log.error("Read status could not set: {}".format(ex))
-            return _("Read status could not set: {}".format(ex.orig))
+        book.read_status = ub.ReadBook.STATUS_FINISHED if read_status == True else ub.ReadBook.STATUS_UNREAD
+    if not book.kobo_reading_state:
+        kobo_reading_state = ub.KoboReadingState(user_id=current_user.id, book_id=book_id)
+        kobo_reading_state.current_bookmark = ub.KoboBookmark()
+        kobo_reading_state.statistics = ub.KoboStatistics()
+        book.kobo_reading_state = kobo_reading_state
+    ub.session.merge(book)
+    ub.session_commit("Book {} readbit toggled".format(book_id))
     return ""
 
 

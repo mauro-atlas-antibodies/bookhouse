@@ -52,6 +52,27 @@ from .usermanagement import user_login_required, login_required_if_no_ano
 from .string_helper import strip_whitespaces
 
 editbook = Blueprint('edit-book', __name__)
+
+# Bookhouse: Calibre libraries are strictly read-only. These endpoints mutate
+# Calibre metadata or book files and are hard-disabled; they return 403.
+CALIBRE_MUTATING_ENDPOINTS = frozenset((
+    'edit-book.delete_books_ajax',
+    'edit-book.delete_book',
+    'edit-book.edit_book',
+    'edit-book.upload',
+    'edit-book.convert_bookformat',
+    'edit-book.edit_list_book',
+    'edit-book.edit_selected_books',
+    'edit-book.merge_list_book',
+    'edit-book.table_xchange_author_title',
+))
+
+
+@editbook.before_request
+def reject_calibre_mutations():
+    if request.endpoint in CALIBRE_MUTATING_ENDPOINTS:
+        log.warning("Blocked attempt to mutate read-only Calibre library: %s", request.endpoint)
+        return abort(403)
 log = logger.create()
 
 
