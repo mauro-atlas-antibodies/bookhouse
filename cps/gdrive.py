@@ -30,7 +30,8 @@ from shutil import move, copyfile
 from flask import Blueprint, flash, request, redirect, url_for, abort
 from flask_babel import gettext as _
 
-from . import logger, gdriveutils, config, ub, calibre_db, csrf
+from . import logger, gdriveutils, config, ub, csrf
+from . import get_current_library_db
 from .admin import admin_required
 from .file_helper import get_temp_dir
 from .usermanagement import user_login_required
@@ -150,6 +151,8 @@ try:
                     log.info('Setting up new DB')
                     # prevent error on windows, as os.rename does on existing files, also allow cross hdd move
                     move(os.path.join(tmp_dir, "tmp_metadata.db"), dbpath)
+                    # Legacy single-library GDrive sync: reconnect the main instance
+                    calibre_db = get_current_library_db()
                     calibre_db.reconnect_db(config, ub.app_DB_path)
         except Exception as ex:
             log.error_or_exception(ex)
