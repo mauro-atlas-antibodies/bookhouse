@@ -516,3 +516,30 @@ body > div.container-fluid  {
 .navbar-form.navbar-left .input-group-btn {
   padding-left: 16px;
 }
+
+/* Bookhouse: library switcher rows up with the search input */
+.navbar-form.navbar-left #lib_select,
+.navbar-form.navbar-left #lib_select_form .form-group {
+  height: 30px;
+}
+.navbar-form.navbar-left #lib_select {
+  padding: 2px 8px;
+  line-height: 22px;
+  margin-top: 0;
+}
+
+/* Bookhouse: current library title + description under the switcher */
+.lib-info {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 0 0 10px;
+  line-height: 1.2;
+}
+.lib-info .lib-name {
+  font-size: 14px;
+  font-weight: bold;
+}
+.lib-info .lib-desc {
+  font-size: 11px;
+  color: #999;
+}
