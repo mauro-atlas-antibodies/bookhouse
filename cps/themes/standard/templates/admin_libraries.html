@@ -19,25 +19,27 @@
     <tbody>
       {% for lib in libraries %}
       <tr>
-        <td>{{ lib.name }}</td>
+        <td>{{ lib.name }}{% if lib.is_default %} <span class="label label-primary">{{_('default')}}</span>{% endif %}</td>
         <td>{{ lib.slug }}</td>
         <td>{{ lib.path }}</td>
         <td>{{ lib.description or '' }}</td>
         <td>{% if lib.enabled %}{{_('enabled')}}{% else %}{{_('disabled')}}{% endif %}</td>
         <td class="text-right">
-          {% if lib.id != main_library_id %}
-            <form method="POST" action="{{url_for('admin.toggle_library', lib_id=lib.id)}}" style="display:inline">
+          {% if lib.enabled and not lib.is_default %}
+            <form method="POST" action="{{url_for('admin.set_default_library_ui', lib_id=lib.id)}}" style="display:inline">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-              <button type="submit" class="btn btn-default btn-xs">{% if lib.enabled %}{{_('Disable')}}{% else %}{{_('Enable')}}{% endif %}</button>
+              <button type="submit" class="btn btn-default btn-xs">{{_('Set Default')}}</button>
             </form>
-            <form method="POST" action="{{url_for('admin.delete_library_ui', lib_id=lib.id)}}" style="display:inline"
-                  onsubmit="return confirm('{{_('Delete this library and all its stored user state (shelves, read status, bookmarks, downloads)? This does not touch the Calibre library files.')|escape}}');">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-              <button type="submit" class="btn btn-danger btn-xs">{{_('Delete')}}</button>
-            </form>
-          {% else %}
-            <span class="text-muted">{{_('main library')}}</span>
           {% endif %}
+          <form method="POST" action="{{url_for('admin.toggle_library', lib_id=lib.id)}}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="btn btn-default btn-xs">{% if lib.enabled %}{{_('Disable')}}{% else %}{{_('Enable')}}{% endif %}</button>
+          </form>
+          <form method="POST" action="{{url_for('admin.delete_library_ui', lib_id=lib.id)}}" style="display:inline"
+                onsubmit="return confirm('{{_('Delete this library and all its stored user state (shelves, read status, bookmarks, downloads)? This does not touch the Calibre library files.')|escape}}');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="btn btn-danger btn-xs">{{_('Delete')}}</button>
+          </form>
         </td>
       </tr>
       {% endfor %}

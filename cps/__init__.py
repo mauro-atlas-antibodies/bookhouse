@@ -214,6 +214,46 @@ def get_current_main_library_id():
     return main_library_id
 
 
+def set_default_library_id(lib_id):
+    """Rebind the module-level default library id + persist the flag."""
+    global main_library_id
+    main_library_id = lib_id
+    ub.set_default_library(lib_id)
+
+
+def initialize_first_library_guard(app):
+    """Fresh deployments have zero libraries: send users to the setup wizard.
+
+    Only authenticated admins may pass through to the library management
+    pages; everyone else is shown the setup page (admins get the add form,
+    others are told to wait for the admin).
+    """
+    from flask import request, redirect, url_for
+    from .render_template import render_title_template
+    from flask_babel import gettext as _
+
+    @app.before_request
+    def _bookhouse_setup_guard():  # noqa
+        # once a default exists, everything proceeds normally
+        if ub.get_default_library() is not None:
+            return None
+        endpoint = request.endpoint or ''
+        allowed_prefixes = ('web.login', 'web.logout', 'static', 'remotelogin.')
+        allowed_exact = ('admin.list_libraries', 'admin.add_library_ui',
+                         'admin.toggle_library', 'admin.delete_library_ui',
+                         'admin.set_default_library_ui', 'basic.select_library')
+        if any(endpoint.startswith(p) for p in allowed_prefixes):
+            return None
+        if endpoint in allowed_exact or request.path.split('?')[0].startswith('/admin/libraries'):
+            return None
+        from .cw_login import current_user
+        if current_user is not None and getattr(current_user, 'is_authenticated', False):
+            return redirect(url_for('admin.list_libraries'))
+        return render_title_template('setup.html',
+                                     title=_('Welcome to Bookhouse'),
+                                     page='setup')
+
+
 def register_library_in_registry(lib_id):
     """Build and register a CalibreDB instance for a library at runtime."""
     global _registry_settings_path
@@ -290,21 +330,37 @@ def create_app():
     lm.session_protection = 'strong' if config.config_session == 1 else "basic"
 
     ub.bootstrap_library(config.config_calibre_dir)
-    calibre_db.update_config(config, config.config_calibre_dir, cli_param.settings_path)
+    if config.config_calibre_dir:
+        calibre_db.update_config(config, config.config_calibre_dir, cli_param.settings_path)
 
     # Load the library registry from the app DB registry table.
     global main_library_id
     global _registry_settings_path
     _registry_settings_path = cli_param.settings_path
     lib_registries.clear()
+    # Bookhouse: default library (replaces the legacy 'main' concept).
+    # The row matching config_calibre_dir (if any) bootstraps as default;
+    # a fresh deployment may have no default at all.
+    default_lib = ub.get_default_library()
     for lib in ub.get_enabled_libraries():
         if lib.path == config.config_calibre_dir:
-            main_library_id = lib.id
-            lib_registries[lib.id] = calibre_db
+            lib_db = calibre_db  # legacy global instance serves the legacy dir
         else:
             lib_db = db.CalibreDB(app)
             lib_db.update_config(config, lib.path, cli_param.settings_path)
-            lib_registries[lib.id] = lib_db
+        lib_registries[lib.id] = lib_db
+        if default_lib is not None and lib.id == default_lib.id:
+            main_library_id = lib.id
+    if main_library_id is None and default_lib is None:
+        # no explicit default: fall back to the legacy config path's library,
+        # else the first enabled library, else None (fresh deployment)
+        legacy = next((lib for lib in ub.get_enabled_libraries()
+                       if lib.path == config.config_calibre_dir), None)
+        chosen = legacy or (ub.get_enabled_libraries()[0]
+                            if ub.get_enabled_libraries() else None)
+        if chosen is not None:
+            ub.set_default_library(chosen.id)
+            main_library_id = chosen.id
 
     # One teardown for all library instances: Flask 3 no longer allows
     # registering teardown_appcontext after the first request, and library
@@ -397,3 +453,6 @@ def create_app():
 LIBRARY_ID_TABLES_MODELS = (ub.BookShelf, ub.ReadBook, ub.Bookmark,
                             ub.ArchivedBook, ub.KoboSyncedBooks,
                             ub.KoboReadingState, ub.Downloads)
+
+# fresh-deployment wizard guard (needs app + templates to exist)
+initialize_first_library_guard(app)

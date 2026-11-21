@@ -1,0 +1,23 @@
+{% extends theme("layout.html") %}
+{% block body %}
+<div class="discover" id="bookhouse_setup">
+  <h2>{{_('Welcome to Bookhouse')}}</h2>
+  <p>{{_('No Calibre library is configured yet. Calibre libraries are strictly read-only in Bookhouse: your metadata.db and book files are never modified.')}}</p>
+  {% if current_user.is_authenticated %}
+    <h3>{{_('Get Started')}}</h3>
+    <ol>
+      <li>{{_('Locate the folder of an existing Calibre library (the one containing metadata.db).')}}</li>
+      <li>{{_('Open the Library Management page and add its path as the first library.')}}</li>
+      <li>{{_('Once added, Bookhouse indexes it read-only and shows it to every user.')}}</li>
+    </ol>
+    <p>
+      <a class="btn btn-primary" href="{{url_for('admin.list_libraries')}}">{{_('Open Library Management')}}</a>
+    </p>
+  {% else %}
+    <p>{{_('An administrator needs to configure the first Calibre library before Bookhouse can be used.')}}</p>
+    <p>
+      <a class="btn btn-default" href="{{url_for('web.login')}}">{{_('Log In')}}</a>
+    </p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -264,7 +264,13 @@ def add_library_ui():
                          description=description, enabled=True)
     from . import register_library_in_registry
     register_library_in_registry(lib.id)
-    flash(_("Library '%(name)s' added", name=name), category="success")
+    # fresh deployments: the first library becomes the default automatically
+    if ub.get_default_library() is None:
+        from . import set_default_library_id
+        set_default_library_id(lib.id)
+        flash(_("Library '%(name)s' added and set as default", name=name), category="success")
+    else:
+        flash(_("Library '%(name)s' added", name=name), category="success")
     return redirect(url_for('admin.list_libraries'))
 
 
@@ -272,17 +278,27 @@ def add_library_ui():
 @user_login_required
 @admin_required
 def toggle_library(lib_id):
-    from . import main_library_id, unregister_library_in_registry
+    from . import unregister_library_in_registry
     lib = ub.get_library(lib_id)
     if not lib:
         abort(404)
-    if lib.id == main_library_id:
-        flash(_("The main library cannot be disabled"), category="error")
+    # Bookhouse: any library can be toggled; disabling the last enabled one
+    # is blocked (the setup wizard would otherwise have no way back in).
+    enabled_count = len(ub.session.query(ub.Library).filter(
+        ub.Library.enabled.is_(True)).all())
+    if lib.enabled and enabled_count <= 1:
+        flash(_("Cannot disable the last enabled library"), category="error")
         return redirect(url_for('admin.list_libraries'))
     lib.enabled = not lib.enabled
     ub.update_library(lib)
     if not lib.enabled:
         unregister_library_in_registry(lib.id)
+        if lib.is_default:
+            # promote the first remaining enabled library as default
+            remaining = ub.session.query(ub.Library).filter(
+                ub.Library.enabled.is_(True)).order_by(ub.Library.id).first()
+            from . import set_default_library_id
+            set_default_library_id(remaining.id if remaining else None)
     else:
         from . import register_library_in_registry
         register_library_in_registry(lib.id)
@@ -295,13 +311,18 @@ def toggle_library(lib_id):
 @user_login_required
 @admin_required
 def delete_library_ui(lib_id):
-    from . import main_library_id, unregister_library_in_registry
+    from . import unregister_library_in_registry, set_default_library_id
     lib = ub.get_library(lib_id)
     if not lib:
         abort(404)
-    if lib.id == main_library_id:
-        flash(_("The main library cannot be deleted"), category="error")
+    # Bookhouse: any library may be deleted, but never the last enabled one
+    # (the setup wizard guard would otherwise lock everyone out).
+    enabled_count = len(ub.session.query(ub.Library).filter(
+        ub.Library.enabled.is_(True)).all())
+    if lib.enabled and enabled_count <= 1:
+        flash(_("Cannot delete the last enabled library"), category="error")
         return redirect(url_for('admin.list_libraries'))
+    was_default = bool(lib.is_default)
 
     # remove Bookhouse-owned state scoped to this library
     from . import LIBRARY_ID_TABLES_MODELS
@@ -312,7 +333,24 @@ def delete_library_ui(lib_id):
     name = lib.name
     unregister_library_in_registry(lib.id)
     ub.remove_library(lib)
+    if was_default:
+        remaining = ub.session.query(ub.Library).filter(
+            ub.Library.enabled.is_(True)).order_by(ub.Library.id).first()
+        set_default_library_id(remaining.id if remaining else None)
     flash(_("Library '%(name)s' deleted", name=name), category="success")
+    return redirect(url_for('admin.list_libraries'))
+
+
+@admi.route("/admin/libraries/<int:lib_id>/default", methods=['POST'])
+@user_login_required
+@admin_required
+def set_default_library_ui(lib_id):
+    from . import set_default_library_id
+    lib = ub.get_library(lib_id)
+    if not lib or not lib.enabled:
+        abort(404)
+    set_default_library_id(lib.id)
+    flash(_("Library '%(name)s' is now the default library", name=lib.name), category="success")
     return redirect(url_for('admin.list_libraries'))
 
 

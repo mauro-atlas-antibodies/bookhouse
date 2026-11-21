@@ -564,8 +564,9 @@ def bootstrap_library(path):
     if not path:
         return None
 
-    # Ensure the library_id columns exist (fresh or legacy app.db)
+    # Ensure the library_id and is_default columns exist (fresh or legacy app.db)
     migrate_library_id_column(session.bind, session)
+    migrate_library_is_default(session.bind, legacy_path=path)
 
     path = os.path.abspath(path)
 
@@ -598,6 +599,9 @@ class Library(Base):
     description = Column(String)
     path = Column(String, nullable=False, unique=True)
     enabled = Column(Boolean, default=True, nullable=False)
+    # Bookhouse: default library = where users land when nothing is selected.
+    # At most one enabled library is default; zero is valid (fresh installs).
+    is_default = Column(Boolean, default=False, nullable=False)
 
     def __repr__(self):
         return '<Library %d:%r>' % (self.id, self.name)
@@ -682,6 +686,36 @@ def get_enabled_libraries():
 
 def get_all_libraries_ordered():
     return session.query(Library).order_by(Library.name).all()
+
+
+# Bookhouse: default library handling (replaces the legacy 'main library'
+# concept). Zero default libraries is valid for fresh deployments.
+def migrate_library_is_default(engine, legacy_path=None):
+    with engine.connect() as conn:
+        cols = [row[1] for row in conn.execute(
+            text("PRAGMA table_info(library)")).fetchall()]
+        if 'is_default' not in cols:
+            conn.execute(text("ALTER TABLE library ADD COLUMN is_default BOOLEAN DEFAULT 0"))
+        if legacy_path:
+            import os as _os
+            conn.execute(text("UPDATE library SET is_default = CASE WHEN path = :p THEN 1 ELSE 0 END"),
+                         {"p": _os.path.abspath(legacy_path)})
+        conn.commit()
+
+
+def get_default_library():
+    return session.query(Library).filter(
+        Library.is_default.is_(True), Library.enabled.is_(True)).first()
+
+
+def set_default_library(library_id):
+    """Make the given library (if enabled) the one and only default."""
+    for lib in session.query(Library).all():
+        if lib.id == library_id:
+            lib.is_default = True
+        else:
+            lib.is_default = False
+    session.commit()
 
 
 def update_library(library):
