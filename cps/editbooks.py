@@ -39,7 +39,8 @@ from sqlalchemy.sql.expression import func
 
 from . import constants, logger, isoLanguages, gdriveutils, uploader, helper, kobo_sync_status
 from .clean_html import clean_string
-from . import config, ub, db, calibre_db
+from . import config, ub, db
+from . import get_current_library_db
 from .services.worker import WorkerThread
 from .tasks.upload import TaskUpload
 from .render_template import render_title_template
@@ -106,6 +107,7 @@ def edit_book(book_id):
 @login_required_if_no_ano
 @upload_required
 def upload():
+    calibre_db = get_current_library_db()
     if len(request.files.getlist("btn-upload-format")):
         book_id = request.form.get('book_id', -1)
         return do_edit_book(book_id, request.files.getlist("btn-upload-format"))
@@ -217,6 +219,7 @@ def convert_bookformat(book_id):
 @editbook.route("/ajax/getcustomenum/<int:c_id>")
 @user_login_required
 def table_get_custom_enum(c_id):
+    calibre_db = get_current_library_db()
     ret = list()
     cc = (calibre_db.session.query(db.CustomColumns)
           .filter(db.CustomColumns.id == c_id)
@@ -329,6 +332,7 @@ def edit_selected_books():
 @login_required_if_no_ano
 @edit_required
 def edit_book_param(param, vals, multi=False):
+    calibre_db = get_current_library_db()
     elements = vals.get('pk',[])
     if vals.get('value', None) is None:
         return {'success':False, 'msg':_("Value is missing on request")}
@@ -470,6 +474,7 @@ def edit_book_param(param, vals, multi=False):
 @editbook.route("/ajax/sort_value/<field>/<int:bookid>")
 @user_login_required
 def get_sorted_entry(field, bookid):
+    calibre_db = get_current_library_db()
     if field in ['title', 'authors', 'sort', 'author_sort']:
         book = calibre_db.get_filtered_book(bookid)
         if book:
@@ -488,6 +493,7 @@ def get_sorted_entry(field, bookid):
 @user_login_required
 @edit_required
 def simulate_merge_list_book():
+    calibre_db = get_current_library_db()
     vals = request.get_json().get('Merge_books')
     if vals:
         to_book = calibre_db.get_book(vals[0]).title
@@ -503,6 +509,7 @@ def simulate_merge_list_book():
 @user_login_required
 @edit_required
 def display_selected_books():
+    calibre_db = get_current_library_db()
     vals = request.get_json().get('selections')
     books = []
     if vals:
@@ -531,6 +538,7 @@ def archive_selected_books():
 @user_login_required
 @edit_required
 def read_selected_books():
+    calibre_db = get_current_library_db()
     vals = request.get_json().get('selections')
     markAsRead = request.get_json().get('markAsRead')
     if vals:
@@ -553,6 +561,7 @@ def read_selected_books():
 @user_login_required
 @edit_required
 def merge_list_book():
+    calibre_db = get_current_library_db()
     vals = request.get_json().get('Merge_books')
     to_file = list()
     if vals:
@@ -591,6 +600,7 @@ def merge_list_book():
 @user_login_required
 @edit_required
 def table_xchange_author_title():
+    calibre_db = get_current_library_db()
     vals = request.get_json().get('xchange')
     edited_books_id = False
     if vals:
@@ -632,6 +642,7 @@ def table_xchange_author_title():
 
 
 def do_edit_book(book_id, upload_formats=None):
+    calibre_db = get_current_library_db()
     modify_date = False
     edit_error = False
 
@@ -811,6 +822,7 @@ def identifier_list(to_save, book):
 
 
 def prepare_authors(authr, calibre_path, gdrive=False):
+    calibre_db = get_current_library_db()
     if gdrive:
         calibre_path = ""
     # handle authors
@@ -876,6 +888,7 @@ def prepare_authors(authr, calibre_path, gdrive=False):
 
 
 def prepare_authors_on_upload(title, authr):
+    calibre_db = get_current_library_db()
     if title != _('Unknown') and authr != _('Unknown'):
         entry = calibre_db.check_exists_book(authr, title)
         if entry:
@@ -906,6 +919,7 @@ def prepare_authors_on_upload(title, authr):
 
 
 def create_book_on_upload(modify_date, meta):
+    calibre_db = get_current_library_db()
     title = meta.title
     authr = meta.author
     sort_authors, input_authors, db_author = prepare_authors_on_upload(title, authr)
@@ -1020,6 +1034,7 @@ def move_coverfile(meta, db_book):
 
 def delete_whole_book(book_id, book):
     # delete book from shelves, Downloads, Read list
+    calibre_db = get_current_library_db()
     ub.session.query(ub.BookShelf).filter(ub.BookShelf.book_id == book_id).delete()
     ub.session.query(ub.ReadBook).filter(ub.ReadBook.book_id == book_id).delete()
     ub.delete_download(book_id)
@@ -1106,6 +1121,7 @@ def check_delete_book(book_id, book_format, json_response, location=""):
 
 
 def delete_book_from_UI(book_id, book_format, location=""):
+    calibre_db = get_current_library_db()
     book = calibre_db.get_book(book_id)
     if book:
         try:
@@ -1135,6 +1151,7 @@ def delete_book_from_UI(book_id, book_format, location=""):
 
 
 def delete_book_from_table(book_id):
+    calibre_db = get_current_library_db()
     book = calibre_db.get_book(book_id)
     if book:
         try:
@@ -1168,6 +1185,7 @@ def delete_book_from_table(book_id):
 
 
 def render_edit_book(book_id):
+    calibre_db = get_current_library_db()
     cc = calibre_db.session.query(db.CustomColumns).filter(db.CustomColumns.datatype.notin_(db.cc_exceptions)).all()
     book = calibre_db.get_filtered_book(book_id, allow_show_archived=True)
     if not book:
@@ -1213,6 +1231,7 @@ def render_edit_book(book_id):
 
 
 def edit_book_ratings(to_save, book):
+    calibre_db = get_current_library_db()
     changed = False
     if strip_whitespaces(to_save.get("rating", "")):
         old_rating = False
@@ -1237,6 +1256,7 @@ def edit_book_ratings(to_save, book):
 
 
 def edit_book_tags(tags, book):
+    calibre_db = get_current_library_db()
     if tags is not None:
         input_tags = tags.split(',')
         input_tags = list(map(lambda it: strip_whitespaces(it), input_tags))
@@ -1255,6 +1275,7 @@ def edit_book_tags(tags, book):
     return False
 
 def edit_book_series(series, book):
+    calibre_db = get_current_library_db()
     if series is not None:
         input_series = [strip_whitespaces(series)]
         input_series = [x for x in input_series if x != '']
@@ -1295,6 +1316,7 @@ def edit_book_comments(comments, book):
 
 
 def edit_book_languages(languages, book, upload_mode=False, invalid=None):
+    calibre_db = get_current_library_db()
     if languages is not None:
         input_languages = languages.split(',')
         unknown_languages = []
@@ -1322,6 +1344,7 @@ def edit_book_languages(languages, book, upload_mode=False, invalid=None):
 
 
 def edit_book_publisher(publishers, book):
+    calibre_db = get_current_library_db()
     if publishers is not None:
         changed = False
         if publishers:
@@ -1335,6 +1358,7 @@ def edit_book_publisher(publishers, book):
     return False
 
 def edit_cc_data_value(book_id, book, c, to_save, cc_db_value, cc_string):
+    calibre_db = get_current_library_db()
     changed = False
     if to_save[cc_string] == 'None':
         to_save[cc_string] = None
@@ -1369,6 +1393,7 @@ def edit_cc_data_value(book_id, book, c, to_save, cc_db_value, cc_string):
 
 
 def edit_cc_data_string(book, c, to_save, cc_db_value, cc_string):
+    calibre_db = get_current_library_db()
     changed = False
     if c.datatype == 'rating':
         to_save[cc_string] = str(int(float(to_save[cc_string]) * 2))
@@ -1397,6 +1422,7 @@ def edit_cc_data_string(book, c, to_save, cc_db_value, cc_string):
 
 
 def edit_single_cc_data(book_id, book, column_id, to_save):
+    calibre_db = get_current_library_db()
     cc = (calibre_db.session.query(db.CustomColumns)
           .filter(db.CustomColumns.datatype.notin_(db.cc_exceptions))
           .filter(db.CustomColumns.id == column_id)
@@ -1405,11 +1431,13 @@ def edit_single_cc_data(book_id, book, column_id, to_save):
 
 
 def edit_all_cc_data(book_id, book, to_save):
+    calibre_db = get_current_library_db()
     cc = calibre_db.session.query(db.CustomColumns).filter(db.CustomColumns.datatype.notin_(db.cc_exceptions)).all()
     return edit_cc_data(book_id, book, to_save, cc)
 
 
 def edit_cc_data(book_id, book, to_save, cc):
+    calibre_db = get_current_library_db()
     changed = False
     for c in cc:
         cc_string = "custom_column_" + str(c.id)
@@ -1458,6 +1486,7 @@ def edit_cc_data(book_id, book, to_save, cc):
 # returns False if an error occurs or no book is uploaded, in all other cases the ebook metadata to change is returned
 def upload_book_formats(requested_files, book, book_id, no_cover=True):
     # Check and handle Uploaded file
+    calibre_db = get_current_library_db()
     to_save = dict()
     error = False
     allowed_extensions = config.config_upload_formats.split(',')
@@ -1572,6 +1601,7 @@ def handle_title_on_edit(book, book_title):
 
 
 def handle_author_on_edit(book, author_name, update_stored=True):
+    calibre_db = get_current_library_db()
     change = False
     input_authors = prepare_authors(author_name, config.get_book_path(), config.config_use_google_drive)
 
