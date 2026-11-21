@@ -29,7 +29,8 @@ from collections import OrderedDict
 import flask
 from flask_babel import gettext as _
 
-from . import db, calibre_db, converter, uploader, constants, dep_check
+from . import db, converter, uploader, constants, dep_check
+from . import get_current_library_db
 from .render_template import render_title_template
 from .usermanagement import user_login_required
 
@@ -77,6 +78,7 @@ def collect_stats():
 @about.route("/stats")
 @user_login_required
 def stats():
+    calibre_db = get_current_library_db()
     counter = calibre_db.session.query(db.Books).count()
     authors = calibre_db.session.query(db.Authors).count()
     categories = calibre_db.session.query(db.Tags).count()
