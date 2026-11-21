@@ -8065,5 +8065,7 @@ div.comments[data-readmore] {
   height: 96px;
 }
 .navbar-brand .bookhouse-brand {
-  font-size: 24px;
+  font-size: 34px;
+  line-height: 1;
+  white-space: nowrap;
 }

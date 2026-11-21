@@ -566,6 +566,8 @@ body > div.container-fluid  {
   height: 90px;
 }
 .navbar-brand .bookhouse-brand {
-  font-size: 24px;
+  font-size: 34px;
   margin-left: 14px;
+  line-height: 1;
+  white-space: nowrap;
 }
