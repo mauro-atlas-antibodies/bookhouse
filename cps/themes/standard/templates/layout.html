@@ -33,6 +33,21 @@
           <a class="navbar-brand" href="{{url_for('web.index')}}">{{instance}}</a>
         </div>
         {% if current_user.is_authenticated or g.allow_anonymous %}
+          {% if g.libraries|length > 1 %}
+            <form class="navbar-form navbar-left" id="lib_select_form" action="{{url_for('basic.select_library')}}" method="POST">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <input type="hidden" name="lib_slug" id="lib_slug_holder" value="{{ g.current_library_slug or '' }}"/>
+              <div class="form-group">
+                <label for="lib_select" class="sr-only">{{_('Library')}}</label>
+                <select id="lib_select" name="lib_slug_display" class="form-control input-sm"
+                        onchange="document.getElementById('lib_slug_holder').value=this.value;document.getElementById('lib_select_form').submit();">
+                  {% for lib in g.libraries %}
+                    <option value="{{ lib.slug }}" {% if lib.slug == g.current_library_slug %}selected{% endif %}>{{ lib.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </form>
+          {% endif %}
           <form class="navbar-form navbar-left" role="search" action="{{url_for('search.simple_search')}}" method="GET">
             <div class="form-group input-group input-group-sm">
               <label for="query" class="sr-only">{{_('Search')}}</label>

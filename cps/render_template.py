@@ -122,6 +122,15 @@ def get_sidebar_config(kwargs=None):
     g.shelves_access = ub.session.query(ub.Shelf).filter(
         or_(ub.Shelf.is_public == 1, ub.Shelf.user_id == current_user.id)).order_by(ub.Shelf.name).all()
 
+    # Bookhouse: expose the enabled libraries and current selection to templates
+    try:
+        from . import get_current_library_slug
+        g.libraries = ub.get_enabled_libraries()
+        g.current_library_slug = get_current_library_slug()
+    except Exception:
+        g.libraries = []
+        g.current_library_slug = None
+
     return sidebar, simple
 
 

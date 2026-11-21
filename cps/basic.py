@@ -41,9 +41,11 @@ basic = Blueprint('basic', __name__)
 
 
 @basic.route("/lib/select/<slug>", methods=['POST'])
+@basic.route("/lib/select", methods=['POST'])
 @login_required_if_no_ano
-def select_library(slug):
+def select_library(slug=None):
     """Store the active library slug in the session; falls back to main."""
+    slug = slug or request.form.get('lib_slug') or ''
     lib = ub.get_library_by_slug(slug)
     if lib is None:
         flask_session.pop('current_library_slug', None)
