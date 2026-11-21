@@ -1,0 +1,10 @@
+.git
+.venv
+*/__pycache__
+*.pyc
+.DS_Store
+library
+library-2
+library-3
+logs
+cps/*.log

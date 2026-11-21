@@ -575,11 +575,11 @@ def _library_tagged_url_for():
             return _url_for(endpoint, **values)
         slug = request.args.get('lib') or flask_session.get('current_library_slug')
         if slug:
-            from . import get_current_library_db
-            cdb = get_current_library_db()
-            active = getattr(cdb, 'config_calibre_dir', None)
-            main_dir = config.config_calibre_dir
-            if active and main_dir and active != main_dir:
+            from . import get_current_library_id, main_library_id
+            # only tag when the active library is not the default
+            current = get_current_library_id()
+            if current is not None and \
+                    (main_library_id is None or current != main_library_id):
                 values.setdefault('lib', slug)
         return _url_for(endpoint, **values)
 

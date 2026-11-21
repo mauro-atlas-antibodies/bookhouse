@@ -1,0 +1,30 @@
+# Bookhouse — Synology / Docker Compose
+#
+# Calibre libraries are mounted READ-ONLY; Bookhouse never modifies
+# metadata.db or book files. Bookhouse-owned state (app.db: users, shelves,
+# reading progress, per-library registry) lives in the /config volume.
+#
+# First run: log in, Admin -> Manage Libraries -> add /calibre-library
+# (the setup wizard will guide you; there is nothing to configure by hand).
+#
+# On Synology (7.x): Container Manager -> Project -> upload this file.
+# Create shared folders e.g. /docker/bookhouse-config and /calibre, then
+# bind-mount them as shown below.
+
+services:
+  bookhouse:
+    build: .
+    # image: <your-registry>/bookhouse:latest   # use prebuilt image if you push one
+    container_name: bookhouse
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    volumes:
+      # Bookhouse-owned state (app.db). Writable.
+      - /volume1/docker/bookhouse-config:/config
+      # Calibre libraries. Strictly READ-ONLY.
+      - /volume1/calibre:/calibre-library:ro
+      # - /volume1/calibre2:/calibre-library-2:ro
+    environment:
+      - TZ=Europe/Stockholm
+      # FLASK_DEBUG=1   # for troubleshooting only

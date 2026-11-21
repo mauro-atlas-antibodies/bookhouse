@@ -125,16 +125,29 @@ def before_request():
     g.themes = themes.get_available_themes()
     g.theme = themes.get_theme(config.config_theme)
     g.config_authors_max = config.config_authors_max
-    if ('/static/' not in request.path and not config.db_configured and
+    # Bookhouse: the app is "configured" as soon as a default library exists
+    # in the registry (fresh deployments never set config_calibre_dir).
+    db_configured = config.db_configured or ub.get_default_library() is not None
+    if ('/static/' not in request.path and not db_configured and
         request.endpoint not in ('admin.ajax_db_config',
                                  'admin.simulatedbchange',
                                  'admin.db_configuration',
+                                 'admin.dbconfig',
+                                 'admin.list_libraries',
+                                 'admin.add_library_ui',
+                                 'admin.toggle_library',
+                                 'admin.delete_library_ui',
+                                 'admin.set_default_library_ui',
+                                 'admin.ajax_pathchooser',
                                  'web.login',
                                  'web.login_post',
                                  'web.logout',
                                  'admin.load_dialogtexts',
+                                 'basic.select_library',
                                  'admin.ajax_pathchooser')):
-        return redirect(url_for('admin.db_configuration'))
+        # Bookhouse: no Calibre dir configured (fresh deploy) — the setup
+        # wizard / library management replaces the legacy config redirect.
+        return redirect(url_for('admin.list_libraries'))
 
 
 #@admi.route("/admin")
