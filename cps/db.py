@@ -558,6 +558,7 @@ class CalibreDB:
         self.config = None
         self.config_calibre_dir = None
         self.app_db_path = None
+        self._session_key = "lib_sql_{}".format(id(self))
 
         if _app is not None and not _app._got_first_request:
             self.init_app(_app)
@@ -664,16 +665,20 @@ class CalibreDB:
         return True, db_change
 
     def teardown(self, exception):
-        ctx = g.get("lib_sql")
+        ctx = g.get(self._session_key)
+
         if ctx:
             ctx.close()
 
     @property
     def session(self):
-        # connect or get active connection
-        if not g.get("lib_sql"):
-            g.lib_sql = self.connect()
-        return g.lib_sql
+        ctx = g.get(self._session_key)
+
+        if not ctx:
+            ctx = self.connect()
+            setattr(g, self._session_key, ctx)
+
+        return ctx
 
     def update_config(self, config, config_calibre_dir, app_db_path):
         self.config = config
