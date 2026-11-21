@@ -206,6 +206,116 @@ def update_thumbnails():
     return ""
 
 
+@admi.route("/admin/libraries")
+@user_login_required
+@admin_required
+def list_libraries():
+    libs = ub.get_all_libraries_ordered()
+    main_id = None
+    from . import main_library_id
+    main_id = main_library_id
+    return render_title_template('admin_libraries.html',
+                                 libraries=libs,
+                                 main_library_id=main_id,
+                                 title=_("Library Management"),
+                                 page="lirm_library")
+
+
+def _validate_new_library_path(path):
+    """Return (None, error_message) or (abs_path, None)."""
+    import os
+    if not path or not path.strip():
+        return None, _("Library path is required")
+    path = os.path.abspath(path.strip())
+    if not os.path.isdir(path):
+        return None, _("Library path does not exist or is not a directory")
+    if not os.path.isfile(os.path.join(path, 'metadata.db')):
+        return None, _("No metadata.db found in the given directory")
+    existing = ub.session.query(ub.Library).filter(ub.Library.path == path).first()
+    if existing:
+        return None, _("Path is already registered as library '%(name)s'", name=existing.name)
+    return path, None
+
+
+def _generate_unique_slug(name):
+    import re as _re
+    from sqlalchemy import func as _func
+    base = _re.sub(r'[^a-zA-Z0-9]+', '-', name).strip('-').lower() or 'library'
+    slug = base
+    n = 1
+    while ub.session.query(ub.Library).filter(ub.Library.slug == slug).first() is not None:
+        n += 1
+        slug = "{}-{}".format(base, n)
+    return slug
+
+
+@admi.route("/admin/libraries/add", methods=['POST'])
+@user_login_required
+@admin_required
+def add_library_ui():
+    path, err = _validate_new_library_path(request.form.get('path'))
+    if err:
+        flash(err, category="error")
+        return redirect(url_for('admin.list_libraries'))
+    name = (request.form.get('name') or '').strip() or os.path.basename(path)
+    description = (request.form.get('description') or '').strip() or None
+    slug = _generate_unique_slug(name)
+    lib = ub.add_library(name=name, slug=slug, path=path,
+                         description=description, enabled=True)
+    from . import register_library_in_registry
+    register_library_in_registry(lib.id)
+    flash(_("Library '%(name)s' added", name=name), category="success")
+    return redirect(url_for('admin.list_libraries'))
+
+
+@admi.route("/admin/libraries/<int:lib_id>/toggle", methods=['POST'])
+@user_login_required
+@admin_required
+def toggle_library(lib_id):
+    from . import main_library_id, unregister_library_in_registry
+    lib = ub.get_library(lib_id)
+    if not lib:
+        abort(404)
+    if lib.id == main_library_id:
+        flash(_("The main library cannot be disabled"), category="error")
+        return redirect(url_for('admin.list_libraries'))
+    lib.enabled = not lib.enabled
+    ub.update_library(lib)
+    if not lib.enabled:
+        unregister_library_in_registry(lib.id)
+    else:
+        from . import register_library_in_registry
+        register_library_in_registry(lib.id)
+    flash(_("Library '%(name)s' is now %(state)s", name=lib.name,
+            state=_("enabled") if lib.enabled else _("disabled")), category="success")
+    return redirect(url_for('admin.list_libraries'))
+
+
+@admi.route("/admin/libraries/<int:lib_id>/delete", methods=['POST'])
+@user_login_required
+@admin_required
+def delete_library_ui(lib_id):
+    from . import main_library_id, unregister_library_in_registry
+    lib = ub.get_library(lib_id)
+    if not lib:
+        abort(404)
+    if lib.id == main_library_id:
+        flash(_("The main library cannot be deleted"), category="error")
+        return redirect(url_for('admin.list_libraries'))
+
+    # remove Bookhouse-owned state scoped to this library
+    from . import LIBRARY_ID_TABLES_MODELS
+    for model in LIBRARY_ID_TABLES_MODELS:
+        ub.session.query(model).filter(model.library_id == lib.id).delete()
+    ub.session_commit()
+
+    name = lib.name
+    unregister_library_in_registry(lib.id)
+    ub.remove_library(lib)
+    flash(_("Library '%(name)s' deleted", name=name), category="success")
+    return redirect(url_for('admin.list_libraries'))
+
+
 @admi.route("/admin/view")
 @user_login_required
 @admin_required

@@ -111,6 +111,8 @@ calibre_db = db.CalibreDB(app)
 # The main library reuses the legacy global calibre_db instance.
 lib_registries = {}
 main_library_id = None
+# Bookhouse: app.db path used when registering CalibreDB instances at runtime
+_registry_settings_path = None
 
 
 def get_library_db(lib_id):
@@ -162,9 +164,35 @@ def get_current_library_slug():
     from flask import session as flask_session
     return flask_session.get('current_library_slug')
 
-web_server = WebServer()
+
+def register_library_in_registry(lib_id):
+    """Build and register a CalibreDB instance for a library at runtime."""
+    global _registry_settings_path
+    if lib_id in lib_registries:
+        return None
+    lib = ub.get_library(lib_id)
+    if lib is None:
+        return None
+    if config.config_calibre_dir and lib.path == config.config_calibre_dir:
+        # main library: already served by the global calibre_db instance
+        lib_registries[lib.id] = calibre_db
+        return calibre_db
+    lib_db = db.CalibreDB(app)
+    lib_db.update_config(config, lib.path, _registry_settings_path)
+    lib_registries[lib.id] = lib_db
+    return lib_db
+
+
+def unregister_library_in_registry(lib_id):
+    """Drop a library's CalibreDB instance from the registry."""
+    return lib_registries.pop(lib_id, None)
+
+# Bookhouse: app.db models whose rows are scoped by library_id
+LIBRARY_ID_TABLES_MODELS = None  # populated after ub is imported (module bottom)
+
 
 updater_thread = Updater()
+web_server = WebServer()
 themes_extension = Themes()
 
 if limiter_present:
@@ -217,6 +245,8 @@ def create_app():
 
     # Load the library registry from the app DB registry table.
     global main_library_id
+    global _registry_settings_path
+    _registry_settings_path = cli_param.settings_path
     lib_registries.clear()
     for lib in ub.get_enabled_libraries():
         if lib.path == config.config_calibre_dir:
@@ -226,6 +256,17 @@ def create_app():
             lib_db = db.CalibreDB(app)
             lib_db.update_config(config, lib.path, cli_param.settings_path)
             lib_registries[lib.id] = lib_db
+
+    # One teardown for all library instances: Flask 3 no longer allows
+    # registering teardown_appcontext after the first request, and library
+    # instances can be created at runtime (admin library management).
+    def _teardown_libraries(exception):
+        for inst in list(lib_registries.values()):
+            try:
+                inst.teardown(exception)
+            except Exception:
+                pass
+    app.teardown_appcontext(_teardown_libraries)
 
     updater_thread.init_updater(config, web_server)
     # Perform dry run of updater and exit afterward
@@ -300,3 +341,10 @@ def create_app():
     register_startup_tasks()
 
     return app
+
+
+# Bookhouse: app.db models whose rows are scoped by library_id
+# (ub models are only available after import; resolve at import end)
+LIBRARY_ID_TABLES_MODELS = (ub.BookShelf, ub.ReadBook, ub.Bookmark,
+                            ub.ArchivedBook, ub.KoboSyncedBooks,
+                            ub.KoboReadingState, ub.Downloads)

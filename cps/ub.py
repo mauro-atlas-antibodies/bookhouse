@@ -639,6 +639,10 @@ def get_enabled_libraries():
     ).order_by(Library.name).all()
 
 
+def get_all_libraries_ordered():
+    return session.query(Library).order_by(Library.name).all()
+
+
 def update_library(library):
     try:
         session.commit()
