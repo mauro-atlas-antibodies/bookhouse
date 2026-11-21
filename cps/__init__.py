@@ -107,6 +107,10 @@ else:
 
 calibre_db = db.CalibreDB(app)
 
+# Library registry: one CalibreDB instance per enabled library.
+# The main library reuses the legacy global calibre_db instance.
+lib_registries = {}
+
 web_server = WebServer()
 
 updater_thread = Updater()
@@ -159,6 +163,16 @@ def create_app():
 
     ub.bootstrap_library(config.config_calibre_dir)
     calibre_db.update_config(config, config.config_calibre_dir, cli_param.settings_path)
+
+    # Load the library registry from the app DB registry table.
+    lib_registries.clear()
+    for lib in ub.get_enabled_libraries():
+        if lib.path == config.config_calibre_dir:
+            lib_registries[lib.id] = calibre_db
+        else:
+            lib_db = db.CalibreDB(app)
+            lib_db.update_config(config, lib.path, cli_param.settings_path)
+            lib_registries[lib.id] = lib_db
 
     updater_thread.init_updater(config, web_server)
     # Perform dry run of updater and exit afterward
