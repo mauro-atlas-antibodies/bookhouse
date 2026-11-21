@@ -564,6 +564,28 @@ def render_xml_template(*args, **kwargs):
     return response
 
 
+@opds.context_processor
+def _library_tagged_url_for():
+    """OPDS clients follow links without session cookies: tag every internal
+    feed URL with the active ?lib= parameter (unless it's the default)."""
+    from flask import request, session as flask_session, url_for as _url_for
+
+    def url_for(endpoint, **values):
+        if endpoint == 'static':
+            return _url_for(endpoint, **values)
+        slug = request.args.get('lib') or flask_session.get('current_library_slug')
+        if slug:
+            from . import get_current_library_db
+            cdb = get_current_library_db()
+            active = getattr(cdb, 'config_calibre_dir', None)
+            main_dir = config.config_calibre_dir
+            if active and main_dir and active != main_dir:
+                values.setdefault('lib', slug)
+        return _url_for(endpoint, **values)
+
+    return {'url_for': url_for}
+
+
 def render_xml_dataset(data_table, book_id):
     calibre_db = get_current_library_db()
     off = request.args.get("offset") or 0

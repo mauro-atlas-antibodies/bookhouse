@@ -131,22 +131,30 @@ def get_library_db_by_slug(slug):
 def get_current_library_db():
     """Resolve the CalibreDB instance for the current request.
 
-    Uses the library slug stored in the Flask session (library switcher).
-    Per-user access is enforced: users without permission fall back to their
-    default library (main for users without grants, first granted otherwise).
-    Falls back to the main library when unset or no longer enabled.
+    Resolution order: explicit ?lib=<slug> URL parameter, then the library
+    slug stored in the Flask session (library switcher), then the default
+    library. Per-user access is enforced everywhere: users without
+    permission fall back to their default library (main for users without
+    grants, first granted otherwise).
     """
     current_db = None
     try:
-        from flask import session as flask_session
+        from flask import session as flask_session, request as flask_request
         from .cw_login import current_user
-        slug = flask_session.get('current_library_slug')
+        # 1. explicit URL parameter (shareable links, OPDS basic auth)
+        slug = flask_request.args.get('lib') or flask_session.get('current_library_slug')
+        if (slug and flask_request.args.get('lib')
+                and not getattr(flask_request, '_bh_lib_persisted', False)):
+            # persist explicit switch for browser navigation (OPDS agents
+            # typically have no session; persist is harmless there)
+            flask_session['current_library_slug'] = slug
+            flask_request._bh_lib_persisted = True
         if slug:
             lib = ub.get_library_by_slug(slug)
             if lib is not None and user_permitted_for_library(current_user, lib):
                 current_db = lib_registries.get(lib.id)
     except RuntimeError:
-        # outside request context (background tasks): main library
+        # outside request context (background tasks): default library
         pass
     if current_db is None:
         # per-user fallback: main unless the user has explicit grants
