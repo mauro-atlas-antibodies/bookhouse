@@ -129,12 +129,23 @@ def get_library_db_by_slug(slug):
 def get_current_library_db():
     """Resolve the CalibreDB instance for the current request.
 
-    Resolves the default (main) library for now. Will later honor the
-    library identity present in the request route.
+    Uses the library slug stored in the Flask session (library switcher).
+    Falls back to the main library when unset or no longer enabled.
     """
-    if lib_registries and main_library_id is not None:
-        return get_library_db(main_library_id) or calibre_db
-    return calibre_db
+    current_db = None
+    try:
+        from flask import session as flask_session
+        slug = flask_session.get('current_library_slug')
+        if slug:
+            current_db = get_library_db_by_slug(slug)
+    except RuntimeError:
+        # outside request context (background tasks): main library
+        pass
+    if current_db is None:
+        if lib_registries and main_library_id is not None:
+            return get_library_db(main_library_id) or calibre_db
+        return calibre_db
+    return current_db
 
 
 def get_current_library_id():
@@ -144,6 +155,12 @@ def get_current_library_id():
         if db_inst is cdb:
             return lib_id
     return main_library_id
+
+
+def get_current_library_slug():
+    """Slug of the library currently selected in the session (or None)."""
+    from flask import session as flask_session
+    return flask_session.get('current_library_slug')
 
 web_server = WebServer()
 

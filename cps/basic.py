@@ -22,11 +22,12 @@
 from flask import Blueprint
 from flask_babel import gettext as _
 from flask_babel import get_locale
-from flask import request, redirect, url_for
+from flask import request, redirect, url_for, session as flask_session
 
 from . import logger, isoLanguages
 from . import db, config
 from . import get_current_library_db
+from . import ub
 from .usermanagement import login_required_if_no_ano
 from .render_template import render_title_template
 from .web import get_sort_function
@@ -37,6 +38,18 @@ except ImportError:
     sort = sorted  # Just use regular sort then, may cause issues with badly named pages in cbz/cbr files
 
 basic = Blueprint('basic', __name__)
+
+
+@basic.route("/lib/select/<slug>", methods=['POST'])
+@login_required_if_no_ano
+def select_library(slug):
+    """Store the active library slug in the session; falls back to main."""
+    lib = ub.get_library_by_slug(slug)
+    if lib is None:
+        flask_session.pop('current_library_slug', None)
+    else:
+        flask_session['current_library_slug'] = lib.slug
+    return redirect(url_for('web.index'))
 
 log = logger.create()
 

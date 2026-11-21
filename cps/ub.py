@@ -628,7 +628,8 @@ def get_library(library_id):
 
 def get_library_by_slug(slug):
     return session.query(Library).filter(
-        Library.slug == slug
+        Library.slug == slug,
+        Library.enabled.is_(True)
     ).one_or_none()
 
 
