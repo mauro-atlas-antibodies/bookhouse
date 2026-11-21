@@ -571,3 +571,23 @@ body > div.container-fluid  {
   line-height: 1;
   white-space: nowrap;
 }
+
+
+/* Bookhouse: logo above the sidebar (not in navbar) */
+.bookhouse-side-logo-link {
+  display: block;
+  text-align: center;
+  margin: 10px 0 6px;
+}
+.bookhouse-side-logo {
+  width: 100%;
+  max-width: 180px;
+  height: auto;
+  border-radius: 6px;
+}
+
+/* restore compact navbar (logo moved to sidebar) */
+.navbar-static-top, .navbar-default.navbar-static-top { min-height: 0 !important; height: auto; }
+.navbar-default .navbar-header { height: auto; }
+.navbar-brand { height: 50px; display: block; padding-top: 15px !important; padding-bottom: 15px !important; }
+.navbar-brand .bookhouse-brand { font-size: 18px; margin-left: 0; font-weight: bold; }

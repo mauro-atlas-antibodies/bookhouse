@@ -16,9 +16,9 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='bookhouse_favicon.ico', v=3) }}">
     <link href="{{ url_for('static', filename='css/libs/bootstrap.min.css') }}" rel="stylesheet" media="screen">
     {% block header %}{% endblock %}
-    <link href="{{ url_for('static', filename='css/style.css', v=2) }}" rel="stylesheet" media="screen">
+    <link href="{{ url_for('static', filename='css/style.css', v=3) }}" rel="stylesheet" media="screen">
     <link href="{{ url_for('static', filename='css/upload.css') }}" rel="stylesheet" media="screen">
-    <link href="{{ url_for('static', filename='css/caliBlur.css', v=2) }}" rel="stylesheet" media="screen">
+    <link href="{{ url_for('static', filename='css/caliBlur.css', v=3) }}" rel="stylesheet" media="screen">
     <link href="{{ url_for('static', filename='css/caliBlur_override.css') }}" rel="stylesheet" media="screen">
   </head>
   <body class="{{ page }} {{ bodyClass }} blur{% if page == 'stat' %} stats{% endif %}{% if page in ['config', 'uiconfig', 'newuser', 'edituser', 'mailset', 'usertable', 'dbconfig'] %} admin{% endif %}{% if page == 'advsearch' %} advanced_search{% endif %}" data-readmore-more="{{_('Read more')}}" data-readmore-less="{{_('Read less')}}">
@@ -32,10 +32,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="{{url_for('web.index')}}">
-            <img src="{{ url_for('static', filename='bookhouse_logo.jpg') }}" alt="{{instance}}" class="bookhouse-logo">
-            <span class="bookhouse-brand">{{instance}}</span>
-          </a>
+          <a class="navbar-brand" href="{{url_for('web.index')}}"><span class="bookhouse-brand">{{instance}}</span></a>
         </div>
         <div class="home-btn"><a class="home-btn-tooltip" href="{{url_for('web.index', page=1)}}" data-toggle="tooltip" title="{{_('Home')}}" data-placement="bottom"></a></div>
         <div class="plexBack"><a class="back-btn-tooltip" href="{{url_for('web.index')}}" data-toggle="tooltip" title="{{_('Back')}}" data-placement="bottom"></a></div>
@@ -146,6 +143,9 @@
       <div class="row-fluid">
         {% if current_user.is_authenticated or g.allow_anonymous %}
         <div class="col-sm-2">
+          <a class="bookhouse-side-logo-link hidden-xs" href="{{url_for('web.index')}}">
+            <img src="{{ url_for('static', filename='bookhouse_logo.jpg') }}" alt="{{instance}}" class="bookhouse-side-logo">
+          </a>
           <nav class="navigation">
             <ul class="list-unstyled" id="scnd-nav" intent in-standard-append="nav.navigation" in-tablet-after="#main-nav" in-tablet-class="nav navbar-nav" in-mobile-after="#main-nav" in-mobile-class="nav navbar-nav">
               <li class="nav-head hidden-xs">{{_('Browse')}}</li>
