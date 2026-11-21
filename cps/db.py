@@ -51,6 +51,8 @@ from . import logger, ub, isoLanguages
 from .pagination import Pagination
 from .string_helper import strip_whitespaces
 
+from pathlib import Path
+
 log = logger.create()
 
 cc_exceptions = ['composite', 'series']
@@ -88,6 +90,8 @@ books_publishers_link = Table('books_publishers_link', Base.metadata,
                               Column('publisher', Integer, ForeignKey('publishers.id'), primary_key=True)
                               )
 
+def calibre_readonly_uri(dbpath):
+    return Path(dbpath).resolve().as_uri() + "?mode=ro"
 
 class Library_Id(Base):
     __tablename__ = 'library_id'
@@ -642,13 +646,15 @@ class CalibreDB:
             return False, False
         try:
             check_engine = create_engine('sqlite://',
-                                         echo=False,
-                                         isolation_level="SERIALIZABLE",
-                                         connect_args={'check_same_thread': False},
-                                         poolclass=StaticPool)
+                                        echo=False,
+                                        isolation_level="SERIALIZABLE",
+                                        connect_args={'check_same_thread': False,'uri': True,},
+                                        poolclass=StaticPool,)
+            
             with check_engine.begin() as connection:
-                connection.execute(text("attach database '{}' as calibre;".format(dbpath.replace("'", "''"))))
-                connection.execute(text("attach database '{}' as app_settings;".format(app_db_path.replace("'", "''"))))
+                connection.execute(text("ATTACH DATABASE :dbpath AS calibre"),{"dbpath": calibre_readonly_uri(dbpath)},)
+                connection.execute(text("ATTACH DATABASE :app_db_path AS app_settings"),{"app_db_path": app_db_path},)
+                
                 local_session = scoped_session(sessionmaker())
                 local_session.configure(bind=connection)
                 database_uuid = local_session().query(Library_Id).one_or_none()
@@ -695,14 +701,16 @@ class CalibreDB:
 
         try:
             engine = create_engine('sqlite://',
-                                       echo=False,
-                                       isolation_level="SERIALIZABLE",
-                                       connect_args={'check_same_thread': False},
-                                       poolclass=StaticPool)
+                                    echo=False,
+                                    isolation_level="SERIALIZABLE",
+                                    connect_args={'check_same_thread': False,'uri': True,},
+                                    poolclass=StaticPool,)
+
+            
             with engine.begin() as connection:
                 connection.execute(text('PRAGMA cache_size = 10000;'))
-                connection.execute(text("attach database '{}' as calibre;".format(dbpath.replace("'", "''"))))
-                connection.execute(text("attach database '{}' as app_settings;".format(app_db_path.replace("'", "''"))))
+                connection.execute(text("ATTACH DATABASE :dbpath AS calibre"),{"dbpath": calibre_readonly_uri(dbpath)},)
+                connection.execute(text("ATTACH DATABASE :app_db_path AS app_settings"),{"app_db_path": app_db_path},)
 
             conn = engine.connect()
             # conn.text_factory = lambda b: b.decode(errors = 'ignore') possible fix for #1302
