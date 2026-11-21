@@ -135,7 +135,9 @@ def search_from_shelf(shelf_id):
         # maxOrder = ub.session.query(func.max(ub.BookShelf.order)).filter(ub.BookShelf.shelf == shelf_id).first()[0] or 0
 
         for book in books_from_shelf:
-            ub.session.delete(ub.session.query(ub.BookShelf).filter(ub.BookShelf.shelf == shelf_id).filter(
+            ub.session.delete(ub.session.query(ub.BookShelf).filter(ub.BookShelf.shelf == shelf_id)
+                              .filter(ub.BookShelf.library_id == get_current_library_id())
+                              .filter(
                 ub.BookShelf.book_id == book).first())
         shelf.last_modified = datetime.now(timezone.utc)
         try:
