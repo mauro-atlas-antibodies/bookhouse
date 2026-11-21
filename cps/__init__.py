@@ -464,3 +464,13 @@ LIBRARY_ID_TABLES_MODELS = (ub.BookShelf, ub.ReadBook, ub.Bookmark,
 
 # fresh-deployment wizard guard (needs app + templates to exist)
 initialize_first_library_guard(app)
+
+
+@app.route('/favicon.ico')
+def bookhouse_favicon():
+    """Browsers request /favicon.ico at the root regardless of link tags."""
+    from flask import send_from_directory
+    response = send_from_directory(app.root_path + '/static', 'bookhouse_favicon.ico',
+                                   mimetype='image/x-icon')
+    response.headers['Cache-Control'] = 'public, max-age=86400'
+    return response

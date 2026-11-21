@@ -557,3 +557,15 @@ body > div.container-fluid  {
   margin-left: 8px;
   font-weight: bold;
 }
+
+/* Bookhouse: larger navbar logo (3x) — let the navbar grow with it */
+.navbar-static-top, .navbar-default.navbar-static-top { min-height: 100px; }
+.navbar-default .navbar-header { height: 100px; }
+.navbar-brand { padding-top: 0 !important; padding-bottom: 0 !important; height: 100px; display: flex; align-items: center; }
+.navbar-brand .bookhouse-logo {
+  height: 90px;
+}
+.navbar-brand .bookhouse-brand {
+  font-size: 24px;
+  margin-left: 14px;
+}

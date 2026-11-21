@@ -13,7 +13,7 @@
     {% endif %}
     <!-- Bootstrap -->
     <link rel="apple-touch-icon" sizes="128x128" href="{{ url_for('static', filename='bookhouse_favicon_128.png') }}">
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='bookhouse_favicon.ico') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='bookhouse_favicon.ico', v=2) }}">
     <link href="{{ url_for('static', filename='css/libs/bootstrap.min.css') }}" rel="stylesheet" media="screen">
     {% block header %}{% endblock %}
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet" media="screen">
