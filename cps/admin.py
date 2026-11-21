@@ -45,8 +45,9 @@ from sqlalchemy.exc import IntegrityError, OperationalError, InvalidRequestError
 from sqlalchemy.sql.expression import func, or_, text
 
 from . import constants, logger, helper, services, cli_param, themes
-from . import db, calibre_db, ub, web_server, config, updater_thread, gdriveutils, \
+from . import db, ub, web_server, config, updater_thread, gdriveutils, \
     kobo_sync_status, schedule
+from . import get_current_library_db
 from .helper import check_valid_domain, send_test_mail, reset_password, generate_password_hash, check_email, \
     valid_email, check_username
 from .embed_helper import get_calibre_binarypath
@@ -146,6 +147,7 @@ def before_request():
 @user_login_required
 @admin_required
 def shutdown():
+    calibre_db = get_current_library_db()
     task = request.get_json().get('parameter', -1)
     show_text = {}
     if task in (0, 1):  # valid commandos received
@@ -185,7 +187,9 @@ def queue_metadata_backup():
 # needed for docker applications, as changes on metadata.db from host are not visible to application
 @admi.route("/reconnect", methods=['GET'])
 def reconnect():
+    calibre_db = None
     if cli_param.reconnect_enable:
+        calibre_db = get_current_library_db()
         calibre_db.reconnect_db(config, ub.app_DB_path)
         return json.dumps({})
     else:
@@ -283,6 +287,7 @@ def calibreweb_alive():
 @user_login_required
 @admin_required
 def view_configuration():
+    calibre_db = get_current_library_db()
     read_column = calibre_db.session.query(db.CustomColumns) \
         .filter(and_(db.CustomColumns.datatype == 'bool', db.CustomColumns.mark_for_delete == 0)).all()
     restrict_columns = calibre_db.session.query(db.CustomColumns) \
@@ -300,6 +305,7 @@ def view_configuration():
 @user_login_required
 @admin_required
 def edit_user_table():
+    calibre_db = get_current_library_db()
     visibility = current_user.view_settings.get('useredit', {})
     languages = calibre_db.speaking_language()
     translations = get_available_locale()
@@ -343,6 +349,7 @@ def edit_user_table():
 @user_login_required
 @admin_required
 def list_users():
+    calibre_db = get_current_library_db()
     off = int(request.args.get("offset") or 0)
     limit = int(request.args.get("limit") or 10)
     search = request.args.get("search")
@@ -438,6 +445,7 @@ def table_get_locale():
 @user_login_required
 @admin_required
 def table_get_default_lang():
+    calibre_db = get_current_library_db()
     languages = calibre_db.speaking_language()
     ret = list()
     ret.append({'value': 'all', 'text': _('Show All')})
@@ -450,6 +458,7 @@ def table_get_default_lang():
 @user_login_required
 @admin_required
 def edit_list_user(param):
+    calibre_db = get_current_library_db()
     vals = request.form.to_dict(flat=False)
     all_user = ub.session.query(ub.User)
     if not config.config_anonbrowse:
@@ -572,6 +581,7 @@ def update_table_settings():
 @user_login_required
 @admin_required
 def update_view_configuration():
+    calibre_db = get_current_library_db()
     to_save = request.form.to_dict()
 
     _config_string(to_save, "config_calibre_web_title")
@@ -964,6 +974,7 @@ def do_full_kobo_sync(userid):
 
 
 def check_valid_read_column(column):
+    calibre_db = get_current_library_db()
     if column != "0":
         if not calibre_db.session.query(db.CustomColumns).filter(db.CustomColumns.id == column) \
           .filter(and_(db.CustomColumns.datatype == 'bool', db.CustomColumns.mark_for_delete == 0)).all():
@@ -972,6 +983,7 @@ def check_valid_read_column(column):
 
 
 def check_valid_restricted_column(column):
+    calibre_db = get_current_library_db()
     if column != "0":
         if not calibre_db.session.query(db.CustomColumns).filter(db.CustomColumns.id == column) \
           .filter(and_(db.CustomColumns.datatype == 'text', db.CustomColumns.mark_for_delete == 0)).all():
@@ -996,6 +1008,7 @@ def restriction_deletion(element, list_func):
 
 
 def prepare_tags(user, action, tags_name, id_list):
+    calibre_db = get_current_library_db()
     if "tags" in tags_name:
         tags = calibre_db.session.query(db.Tags).filter(db.Tags.id.in_(id_list)).all()
         if not tags:
@@ -1309,6 +1322,7 @@ def simulatedbchange():
 @user_login_required
 @admin_required
 def new_user():
+    calibre_db = get_current_library_db()
     content = ub.User()
     languages = calibre_db.speaking_language()
     translations = get_available_locale()
@@ -1461,6 +1475,7 @@ def update_scheduledtasks():
 @user_login_required
 @admin_required
 def edit_user(user_id):
+    calibre_db = get_current_library_db()
     content = ub.session.query(ub.User).filter(ub.User.id == int(user_id)).first()  # type: ub.User
     if not content or (not config.config_anonbrowse and content.name == "Guest"):
         flash(_("User not found"), category="error")
@@ -1728,6 +1743,7 @@ def cancel_task():
 
 
 def _db_simulate_change():
+    calibre_db = get_current_library_db()
     param = request.form.to_dict()
     to_save = dict()
     to_save['config_calibre_dir'] = strip_whitespaces(re.sub(r'[\\/]metadata\.db$',
@@ -1742,6 +1758,7 @@ def _db_simulate_change():
 
 
 def _db_configuration_update_helper():
+    calibre_db = get_current_library_db()
     db_change = False
     to_save = request.form.to_dict()
     gdrive_error = None
