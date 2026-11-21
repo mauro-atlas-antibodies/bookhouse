@@ -553,6 +553,95 @@ def filename(context):
     else:
         return context.get_current_parameters()['uuid'] + '.' + file_format
 
+def bootstrap_library(path):
+    if not path:
+        return None
+
+    path = os.path.abspath(path)
+
+    existing_library = session.query(Library).filter(
+        Library.path == path
+    ).one_or_none()
+
+    if existing_library:
+        return existing_library
+
+    if session.query(Library).count():
+        return None
+
+    return add_library(
+        name='Main Library',
+        slug='main',
+        description='Primary Bookhouse library',
+        path=path,
+        enabled=True,
+    )
+
+class Library(Base):
+    __tablename__ = 'library'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    slug = Column(String, nullable=False, unique=True)
+    description = Column(String)
+    path = Column(String, nullable=False, unique=True)
+    enabled = Column(Boolean, default=True, nullable=False)
+
+    def __repr__(self):
+        return '<Library %d:%r>' % (self.id, self.name)
+    
+def add_library(name, slug, path, description=None, enabled=True):
+    library = Library(
+        name=name,
+        slug=slug,
+        description=description,
+        path=os.path.abspath(path),
+        enabled=enabled,
+    )
+
+    session.add(library)
+
+    try:
+        session.commit()
+        return library
+    except Exception:
+        session.rollback()
+        raise
+
+
+def get_library(library_id):
+    return session.get(Library, library_id)
+
+
+def get_library_by_slug(slug):
+    return session.query(Library).filter(
+        Library.slug == slug
+    ).one_or_none()
+
+
+def get_enabled_libraries():
+    return session.query(Library).filter(
+        Library.enabled.is_(True)
+    ).order_by(Library.name).all()
+
+
+def update_library(library):
+    try:
+        session.commit()
+        return library
+    except Exception:
+        session.rollback()
+        raise
+
+
+def remove_library(library):
+    session.delete(library)
+
+    try:
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
 
 class Thumbnail(Base):
     __tablename__ = 'thumbnail'
