@@ -48,24 +48,9 @@
           <label for="config_columns_to_ignore">{{_('Regular Expression for Ignoring Columns')}}</label>
           <input type="text" class="form-control" name="config_columns_to_ignore" id="config_columns_to_ignore" value="{% if conf.config_columns_to_ignore != None %}{{ conf.config_columns_to_ignore }}{% endif %}" autocomplete="off">
         </div>
-        <div class="form-group">
-          <label for="config_read_column">{{_('Link Read/Unread Status to Calibre Column')}}</label>
-              <select name="config_read_column" id="config_read_column" class="form-control">
-                <option value="0" {% if conf.config_read_column == 0 %}selected{% endif %}></option>
-                {%  for readColumn in readColumns %}
-                <option value="{{ readColumn.id }}" {% if readColumn.id == conf.config_read_column %}selected{% endif %}>{{ readColumn.name }}</option>
-                {% endfor %}
-              </select>
-        </div>
-        <div class="form-group">
-          <label for="config_restricted_column">{{_('View Restrictions based on Calibre column')}}</label>
-              <select name="config_restricted_column" id="config_restricted_column" class="form-control">
-                <option value="0" {% if conf.config_restricted_column == 0 %}selected{% endif %}>{{ _('None') }}</option>
-                {%  for restrictColumn in restrictColumns %}
-                <option value="{{ restrictColumn.id }}" {% if restrictColumn.id == conf.config_restricted_column %}selected{% endif %}>{{ restrictColumn.name }}</option>
-                {% endfor %}
-              </select>
-        </div>
+        {# Bookhouse: config_read_column / config_restricted_column removed —
+           Calibre libraries are strictly read-only; custom-column based
+           read-status and restrictions would require Calibre DB writes. #}
         <div class="form-group">
           <label for="config_title_regex">{{_('Regular Expression for Title Sorting')}}</label>
           <input type="text" class="form-control" name="config_title_regex" id="config_title_regex" value="{% if conf.config_title_regex != None %}{{ conf.config_title_regex }}{% endif %}" autocomplete="off">

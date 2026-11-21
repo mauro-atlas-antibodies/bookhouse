@@ -226,6 +226,11 @@ def create_app():
     if not hasattr(app, "theme_manager"):
         themes_extension.init_themes(app)
 
+    # Bookhouse: Calibre libraries are strictly read-only. The legacy custom
+    # column settings required Calibre DB writes and are forced off.
+    config.config_read_column = 0
+    config.config_restricted_column = 0
+
     if os.environ.get('FLASK_DEBUG'):
         cache_buster.init_cache_busting(app)
     log.info('Starting Bookhouse...')

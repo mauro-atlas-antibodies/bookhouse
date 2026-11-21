@@ -587,17 +587,11 @@ def update_view_configuration():
     if _config_string(to_save, "config_title_regex"):
         calibre_db.create_functions(config)
 
-    if not check_valid_read_column(to_save.get("config_read_column", "0")):
-        flash(_("Invalid Read Column"), category="error")
-        log.debug("Invalid Read column")
-        return view_configuration()
-    _config_int(to_save, "config_read_column")
-
-    if not check_valid_restricted_column(to_save.get("config_restricted_column", "0")):
-        flash(_("Invalid Restricted Column"), category="error")
-        log.debug("Invalid Restricted Column")
-        return view_configuration()
-    _config_int(to_save, "config_restricted_column")
+    # Bookhouse: Calibre libraries are strictly read-only. Custom-column based
+    # read status / restrictions required Calibre DB writes; force the legacy
+    # columns off regardless of form input.
+    config.config_read_column = 0
+    config.config_restricted_column = 0
 
     if not themes.is_valid_theme(to_save.get("config_theme", "0")):
         flash(_("Invalid Theme"), category="error")
