@@ -8044,3 +8044,18 @@ div.comments[data-readmore] {
   font-size: 11px;
   color: #999;
 }
+
+/* Bookhouse: navbar logo + wordmark */
+.navbar-brand .bookhouse-logo {
+  height: 32px;
+  width: auto;
+  display: inline-block;
+  vertical-align: middle;
+  border-radius: 4px;
+}
+.navbar-brand .bookhouse-brand {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 8px;
+  font-weight: bold;
+}
