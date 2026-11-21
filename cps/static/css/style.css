@@ -680,3 +680,61 @@ body.bh-scheme-ghostwood #scnd-nav a { color: #2c6e3f; }
 body.bh-scheme-ghostwood #scnd-nav .nav-head { color: #b5232a; }
 body.bh-scheme-ghostwood .btn-primary { background-color: #2c6e3f; border-color: #245c33; }
 body.bh-scheme-ghostwood h2, body.bh-scheme-ghostwood h3 { color: #b5232a; }
+
+/* Bookhouse: palette refinements (round 2) ------------------------------ */
+
+/* Create a Shelf button — merges with each palette, non-dominant */
+body.bh-scheme-great_northern .navigation .create-shelf a {
+  background: #d9a441;
+  color: #2b2118;
+}
+body.bh-scheme-great_northern .navigation .create-shelf a:hover {
+  background: #e5b458;
+  color: #191008;
+}
+body.bh-scheme-red_room .navigation .create-shelf a {
+  background: #4a1013;
+  color: #d9a441;
+}
+body.bh-scheme-red_room .navigation .create-shelf a:hover {
+  background: #5c1216;
+  color: #ffcf6e;
+}
+body.bh-scheme-ghostwood .navigation .create-shelf a {
+  background: #6a9d77;
+  color: #f6f9f4;
+}
+body.bh-scheme-ghostwood .navigation .create-shelf a:hover {
+  background: #7cae8a;
+}
+
+/* Great Northern: sidebar legibility round 2 */
+body.bh-scheme-great_northern #scnd-nav li a {
+  color: #f8f0da;
+  font-weight: 600;
+}
+body.bh-scheme-great_northern #scnd-nav li a:hover {
+  color: #ffcf6e;
+  background: rgba(217, 164, 65, 0.15);
+}
+body.bh-scheme-great_northern .lib-info .lib-name { color: #f5e7bd; }
+body.bh-scheme-great_northern .lib-info .lib-desc { color: #c9b28a; }
+body.bh-scheme-red_room .lib-info .lib-name { color: #e8ddd0; }
+body.bh-scheme-red_room .lib-info .lib-desc { color: #b7a58f; }
+body.bh-scheme-ghostwood .lib-info .lib-name { color: #243b2f; }
+body.bh-scheme-ghostwood .lib-info .lib-desc { color: #67816e; }
+
+/* Ghostwood: sorting buttons/table headers need real contrast */
+body.bh-scheme-ghostwood .btn {
+  color: #243b2f;
+}
+body.bh-scheme-ghostwood .btn:hover {
+  color: #14231a;
+  background-color: #e6efe8;
+}
+body.bh-scheme-ghostwood .table th a {
+  color: #243b2f;
+}
+body.bh-scheme-ghostwood .table th a:hover {
+  color: #b5232a;
+}
