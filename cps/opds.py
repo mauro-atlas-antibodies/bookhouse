@@ -31,7 +31,8 @@ from flask_babel import gettext as _
 from sqlalchemy.sql.expression import func, text, or_, and_, true
 from sqlalchemy.exc import InvalidRequestError, OperationalError
 
-from . import logger, config, db, calibre_db, ub, isoLanguages, constants
+from . import logger, config, db, ub, isoLanguages, constants
+from . import get_current_library_db
 from .usermanagement import requires_basic_auth_if_no_ano, auth
 from .helper import get_download_link, get_book_cover
 from .pagination import Pagination
@@ -80,6 +81,7 @@ def feed_booksindex():
 @opds.route("/opds/books/letter/<book_id>")
 @requires_basic_auth_if_no_ano
 def feed_letter_books(book_id):
+    calibre_db = get_current_library_db()
     off = request.args.get("offset") or 0
     letter = true() if book_id == "00" else func.upper(db.Books.sort).startswith(book_id)
     entries, __, pagination = calibre_db.fill_indexpage((int(off) / (int(config.config_books_per_page)) + 1), 0,
@@ -94,6 +96,7 @@ def feed_letter_books(book_id):
 @opds.route("/opds/new")
 @requires_basic_auth_if_no_ano
 def feed_new():
+    calibre_db = get_current_library_db()
     if not auth.current_user().check_visibility(constants.SIDEBAR_RECENT):
         abort(404)
     off = request.args.get("offset") or 0
@@ -107,6 +110,7 @@ def feed_new():
 @opds.route("/opds/discover")
 @requires_basic_auth_if_no_ano
 def feed_discover():
+    calibre_db = get_current_library_db()
     if not auth.current_user().check_visibility(constants.SIDEBAR_RANDOM):
         abort(404)
     query = calibre_db.generate_linked_query(config.config_read_column, db.Books)
@@ -119,6 +123,7 @@ def feed_discover():
 @opds.route("/opds/rated")
 @requires_basic_auth_if_no_ano
 def feed_best_rated():
+    calibre_db = get_current_library_db()
     if not auth.current_user().check_visibility(constants.SIDEBAR_BEST_RATED):
         abort(404)
     off = request.args.get("offset") or 0
@@ -133,6 +138,7 @@ def feed_best_rated():
 @opds.route("/opds/hot")
 @requires_basic_auth_if_no_ano
 def feed_hot():
+    calibre_db = get_current_library_db()
     if not auth.current_user().check_visibility(constants.SIDEBAR_HOT):
         abort(404)
     off = request.args.get("offset") or 0
@@ -166,6 +172,7 @@ def feed_authorindex():
 @opds.route("/opds/author/letter/<book_id>")
 @requires_basic_auth_if_no_ano
 def feed_letter_author(book_id):
+    calibre_db = get_current_library_db()
     if not auth.current_user().check_visibility(constants.SIDEBAR_AUTHOR):
         abort(404)
     off = request.args.get("offset") or 0
@@ -190,6 +197,7 @@ def feed_author(book_id):
 @opds.route("/opds/publisher")
 @requires_basic_auth_if_no_ano
 def feed_publisherindex():
+    calibre_db = get_current_library_db()
     if not auth.current_user().check_visibility(constants.SIDEBAR_PUBLISHER):
         abort(404)
     off = request.args.get("offset") or 0
@@ -222,6 +230,7 @@ def feed_categoryindex():
 @opds.route("/opds/category/letter/<book_id>")
 @requires_basic_auth_if_no_ano
 def feed_letter_category(book_id):
+    calibre_db = get_current_library_db()
     if not auth.current_user().check_visibility(constants.SIDEBAR_CATEGORY):
         abort(404)
     off = request.args.get("offset") or 0
@@ -256,6 +265,7 @@ def feed_seriesindex():
 @opds.route("/opds/series/letter/<book_id>")
 @requires_basic_auth_if_no_ano
 def feed_letter_series(book_id):
+    calibre_db = get_current_library_db()
     if not auth.current_user().check_visibility(constants.SIDEBAR_SERIES):
         abort(404)
     off = request.args.get("offset") or 0
@@ -276,6 +286,7 @@ def feed_letter_series(book_id):
 @opds.route("/opds/series/<int:book_id>")
 @requires_basic_auth_if_no_ano
 def feed_series(book_id):
+    calibre_db = get_current_library_db()
     off = request.args.get("offset") or 0
     entries, __, pagination = calibre_db.fill_indexpage((int(off) / (int(config.config_books_per_page)) + 1), 0,
                                                         db.Books,
@@ -289,6 +300,7 @@ def feed_series(book_id):
 @opds.route("/opds/ratings")
 @requires_basic_auth_if_no_ano
 def feed_ratingindex():
+    calibre_db = get_current_library_db()
     if not auth.current_user().check_visibility(constants.SIDEBAR_RATING):
         abort(404)
     off = request.args.get("offset") or 0
@@ -318,6 +330,7 @@ def feed_ratings(book_id):
 @opds.route("/opds/formats")
 @requires_basic_auth_if_no_ano
 def feed_formatindex():
+    calibre_db = get_current_library_db()
     if not auth.current_user().check_visibility(constants.SIDEBAR_FORMAT):
         abort(404)
     off = request.args.get("offset") or 0
@@ -337,6 +350,7 @@ def feed_formatindex():
 @opds.route("/opds/formats/<book_id>")
 @requires_basic_auth_if_no_ano
 def feed_format(book_id):
+    calibre_db = get_current_library_db()
     off = request.args.get("offset") or 0
     entries, __, pagination = calibre_db.fill_indexpage((int(off) / (int(config.config_books_per_page)) + 1), 0,
                                                         db.Books,
@@ -351,6 +365,7 @@ def feed_format(book_id):
 @opds.route("/opds/language/")
 @requires_basic_auth_if_no_ano
 def feed_languagesindex():
+    calibre_db = get_current_library_db()
     if not auth.current_user().check_visibility(constants.SIDEBAR_LANGUAGE):
         abort(404)
     off = request.args.get("offset") or 0
@@ -369,6 +384,7 @@ def feed_languagesindex():
 @opds.route("/opds/language/<int:book_id>")
 @requires_basic_auth_if_no_ano
 def feed_languages(book_id):
+    calibre_db = get_current_library_db()
     off = request.args.get("offset") or 0
     entries, __, pagination = calibre_db.fill_indexpage((int(off) / (int(config.config_books_per_page)) + 1), 0,
                                                         db.Books,
@@ -382,6 +398,7 @@ def feed_languages(book_id):
 @opds.route("/opds/shelfindex")
 @requires_basic_auth_if_no_ano
 def feed_shelfindex():
+    calibre_db = get_current_library_db()
     if not (auth.current_user().is_authenticated or g.allow_anonymous):
         abort(404)
     off = request.args.get("offset") or 0
@@ -397,6 +414,7 @@ def feed_shelfindex():
 @opds.route("/opds/shelf/<int:book_id>")
 @requires_basic_auth_if_no_ano
 def feed_shelf(book_id):
+    calibre_db = get_current_library_db()
     if not (auth.current_user().is_authenticated or g.allow_anonymous):
         abort(404)
     off = request.args.get("offset") or 0
@@ -448,6 +466,7 @@ def opds_download_link(book_id, book_format):
 @opds.route("/ajax/book/<string:uuid>", defaults={'library': ""})
 @requires_basic_auth_if_no_ano
 def get_metadata_calibre_companion(uuid, library):
+    calibre_db = get_current_library_db()
     entry = calibre_db.session.query(db.Books).filter(db.Books.uuid.like("%" + uuid + "%")).first()
     if entry is not None:
         js = render_template('json.txt', entry=entry)
@@ -461,6 +480,7 @@ def get_metadata_calibre_companion(uuid, library):
 @opds.route("/opds/stats")
 @requires_basic_auth_if_no_ano
 def get_database_stats():
+    calibre_db = get_current_library_db()
     stat = dict()
     stat['books'] = calibre_db.session.query(db.Books).count()
     stat['authors'] = calibre_db.session.query(db.Authors).count()
@@ -481,6 +501,7 @@ def feed_get_cover(book_id):
 @opds.route("/opds/readbooks")
 @requires_basic_auth_if_no_ano
 def feed_read_books():
+    calibre_db = get_current_library_db()
     if not (auth.current_user().check_visibility(constants.SIDEBAR_READ_AND_UNREAD) and not auth.current_user().is_anonymous):
         return abort(403)
     off = request.args.get("offset") or 0
@@ -492,6 +513,7 @@ def feed_read_books():
 @opds.route("/opds/unreadbooks")
 @requires_basic_auth_if_no_ano
 def feed_unread_books():
+    calibre_db = get_current_library_db()
     if not (auth.current_user().check_visibility(constants.SIDEBAR_READ_AND_UNREAD) and not auth.current_user().is_anonymous):
         return abort(403)
     off = request.args.get("offset") or 0
@@ -515,6 +537,7 @@ class FeedObject:
 
 
 def feed_search(term):
+    calibre_db = get_current_library_db()
     if term:
         entries, __, ___ = calibre_db.get_search_results(term, config=config)
         entries_count = len(entries) if len(entries) > 0 else 1
@@ -536,6 +559,7 @@ def render_xml_template(*args, **kwargs):
 
 
 def render_xml_dataset(data_table, book_id):
+    calibre_db = get_current_library_db()
     off = request.args.get("offset") or 0
     entries, __, pagination = calibre_db.fill_indexpage((int(off) / (int(config.config_books_per_page)) + 1), 0,
                                                         db.Books,
@@ -547,6 +571,7 @@ def render_xml_dataset(data_table, book_id):
 
 
 def render_element_index(database_column, linked_table, folder):
+    calibre_db = get_current_library_db()
     shift = 0
     off = int(request.args.get("offset") or 0)
     entries = calibre_db.session.query(func.upper(func.substr(database_column, 1, 1)).label('id'), None, None)
