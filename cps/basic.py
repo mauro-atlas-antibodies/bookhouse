@@ -26,7 +26,7 @@ from flask import request, redirect, url_for
 
 from . import logger, isoLanguages
 from . import db, config
-from . import calibre_db
+from . import get_current_library_db
 from .usermanagement import login_required_if_no_ano
 from .render_template import render_title_template
 from .web import get_sort_function
@@ -44,6 +44,7 @@ log = logger.create()
 @basic.route("/basic", methods=["GET"])
 @login_required_if_no_ano
 def index():
+    calibre_db = get_current_library_db()
     term = request.args.get("query", "")  # default to showing all books
     limit = 15
     page = int(request.args.get("page") or 1)
@@ -71,6 +72,7 @@ def index():
 @basic.route("/basic_book/<int:book_id>")
 @login_required_if_no_ano
 def show_book(book_id):
+    calibre_db = get_current_library_db()
     entries = calibre_db.get_book_read_archived(book_id, config.config_read_column, allow_show_archived=True)
     if entries:
         entry = entries[0]
