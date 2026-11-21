@@ -30,7 +30,8 @@ def add_synced_books(book_id):
     from . import get_current_library_id
     lib_id = get_current_library_id()
     is_present = ub.session.query(ub.KoboSyncedBooks).filter(ub.KoboSyncedBooks.book_id == book_id)\
-        .filter(ub.KoboSyncedBooks.user_id == current_user.id).count()
+        .filter(ub.KoboSyncedBooks.user_id == current_user.id)\
+        .filter(ub.KoboSyncedBooks.library_id == get_current_library_id()).count()
     if not is_present:
         synced_book = ub.KoboSyncedBooks()
         synced_book.user_id = current_user.id
@@ -46,11 +47,14 @@ def remove_synced_book(book_id, all=False, session=None):
         user = ub.KoboSyncedBooks.user_id == current_user.id
     else:
         user = true()
+    from . import get_current_library_id
     if not session:
-        ub.session.query(ub.KoboSyncedBooks).filter(ub.KoboSyncedBooks.book_id == book_id).filter(user).delete()
+        ub.session.query(ub.KoboSyncedBooks).filter(ub.KoboSyncedBooks.book_id == book_id) \
+            .filter(ub.KoboSyncedBooks.library_id == get_current_library_id()).filter(user).delete()
         ub.session_commit()
     else:
-        session.query(ub.KoboSyncedBooks).filter(ub.KoboSyncedBooks.book_id == book_id).filter(user).delete()
+        session.query(ub.KoboSyncedBooks).filter(ub.KoboSyncedBooks.book_id == book_id) \
+            .filter(ub.KoboSyncedBooks.library_id == get_current_library_id()).filter(user).delete()
         ub.session_commit(_session=session)
 
 
@@ -58,7 +62,8 @@ def remove_synced_book(book_id, all=False, session=None):
 # state = true archives it, state = false unarchives it
 def change_archived_books(book_id, state=None, message=None):
     archived_book = ub.session.query(ub.ArchivedBook).filter(and_(ub.ArchivedBook.user_id == int(current_user.id),
-                                                                  ub.ArchivedBook.book_id == book_id)).first()
+                                                                  ub.ArchivedBook.book_id == book_id,
+                                                                  ub.ArchivedBook.library_id == get_current_library_id())).first()
     if not archived_book: # and (state == True or state == None):
         archived_book = ub.ArchivedBook(user_id=current_user.id, book_id=book_id, library_id=get_current_library_id())
 
@@ -73,8 +78,11 @@ def change_archived_books(book_id, state=None, message=None):
 # select all books which are synced by the current user and do not belong to a synced shelf and set them to archive
 # select all shelves from current user which are synced and do not belong to the "only sync" shelves
 def update_on_sync_shelfs(user_id):
+    from . import get_current_library_id
+    lib_id = get_current_library_id()
     books_to_archive = (ub.session.query(ub.KoboSyncedBooks)
-                        .join(ub.BookShelf, ub.KoboSyncedBooks.book_id == ub.BookShelf.book_id, isouter=True)
+                        .join(ub.BookShelf, and_(ub.KoboSyncedBooks.book_id == ub.BookShelf.book_id,
+                                                 ub.KoboSyncedBooks.library_id == lib_id), isouter=True)
                         .join(ub.Shelf, ub.Shelf.user_id == user_id, isouter=True)
                         .filter(or_(ub.Shelf.kobo_sync == 0, ub.Shelf.kobo_sync==None))
                         .filter(ub.KoboSyncedBooks.user_id == user_id).all())
@@ -82,6 +90,7 @@ def update_on_sync_shelfs(user_id):
         change_archived_books(b.book_id, True)
         ub.session.query(ub.KoboSyncedBooks) \
             .filter(ub.KoboSyncedBooks.book_id == b.book_id) \
+            .filter(ub.KoboSyncedBooks.library_id == lib_id) \
             .filter(ub.KoboSyncedBooks.user_id == user_id).delete()
         ub.session_commit()
 

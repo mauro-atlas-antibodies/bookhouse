@@ -314,7 +314,8 @@ def edit_book_read_status(book_id, read_status=None):
     # always stored in the Bookhouse app DB (ub.ReadBook). The legacy
     # config.config_read_column (Calibre custom column) path was removed.
     book = ub.session.query(ub.ReadBook).filter(and_(ub.ReadBook.user_id == int(current_user.id),
-                                                     ub.ReadBook.book_id == book_id)).first()
+                                                     ub.ReadBook.book_id == book_id,
+                                                     ub.ReadBook.library_id == get_current_library_id())).first()
     if not book:
         read_book = ub.ReadBook(user_id=current_user.id, book_id=book_id, library_id=get_current_library_id())
         book = read_book

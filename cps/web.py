@@ -160,6 +160,7 @@ def set_bookmark(book_id, book_format):
     bookmark_key = request.form["bookmark"]
     ub.session.query(ub.Bookmark).filter(and_(ub.Bookmark.user_id == int(current_user.id),
                                               ub.Bookmark.book_id == book_id,
+                                              ub.Bookmark.library_id == get_current_library_id(),
                                               ub.Bookmark.format == book_format)).delete()
     if not bookmark_key:
         ub.session_commit()
@@ -481,6 +482,7 @@ def render_hot_books(page, order):
 
         off = int(int(config.config_books_per_page) * (page - 1))
         all_books = ub.session.query(ub.Downloads, func.count(ub.Downloads.book_id)) \
+            .filter(ub.Downloads.library_id == get_current_library_id()) \
             .order_by(*order[0]).group_by(ub.Downloads.book_id)
         hot_books = all_books.offset(off).limit(config.config_books_per_page)
         entries = list()
@@ -511,7 +513,8 @@ def render_downloaded_books(page, order, user_id):
         entries, random, pagination = calibre_db.fill_indexpage(page,
                                                             0,
                                                             db.Books,
-                                                            ub.Downloads.user_id == user_id,
+                                                            and_(ub.Downloads.user_id == user_id,
+                                                                 ub.Downloads.library_id == get_current_library_id()),
                                                             order[0],
                                                             True, config.config_read_column,
                                                             db.books_series_link,
@@ -1621,6 +1624,7 @@ def read_book(book_id, book_format):
     if current_user.is_authenticated:
         bookmark = ub.session.query(ub.Bookmark).filter(and_(ub.Bookmark.user_id == int(current_user.id),
                                                              ub.Bookmark.book_id == book_id,
+                                                             ub.Bookmark.library_id == get_current_library_id(),
                                                              ub.Bookmark.format == book_format.upper())).first()
     if book_format.lower() == "epub" or book_format.lower() == "kepub":
         log.debug("Start [k]epub reader for %d", book_id)
@@ -1676,7 +1680,8 @@ def show_book(book_id):
                 lang_index].lang_code)
         cc = calibre_db.get_cc_columns(config, filter_config_custom_read=True)
         book_in_shelves = []
-        shelves = ub.session.query(ub.BookShelf).filter(ub.BookShelf.book_id == book_id).all()
+        shelves = ub.session.query(ub.BookShelf).filter(ub.BookShelf.book_id == book_id,
+                                                        ub.BookShelf.library_id == get_current_library_id()).all()
         for sh in shelves:
             book_in_shelves.append(sh.shelf)
 

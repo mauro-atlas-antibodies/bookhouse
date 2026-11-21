@@ -40,7 +40,7 @@ from sqlalchemy.sql.expression import func
 from . import constants, logger, isoLanguages, gdriveutils, uploader, helper, kobo_sync_status
 from .clean_html import clean_string
 from . import config, ub, db
-from . import get_current_library_db
+from . import get_current_library_db, get_current_library_id
 from .services.worker import WorkerThread
 from .tasks.upload import TaskUpload
 from .render_template import render_title_template
@@ -1056,8 +1056,10 @@ def move_coverfile(meta, db_book):
 def delete_whole_book(book_id, book):
     # delete book from shelves, Downloads, Read list
     calibre_db = get_current_library_db()
-    ub.session.query(ub.BookShelf).filter(ub.BookShelf.book_id == book_id).delete()
-    ub.session.query(ub.ReadBook).filter(ub.ReadBook.book_id == book_id).delete()
+    ub.session.query(ub.BookShelf).filter(ub.BookShelf.book_id == book_id) \
+        .filter(ub.BookShelf.library_id == get_current_library_id()).delete()
+    ub.session.query(ub.ReadBook).filter(ub.ReadBook.book_id == book_id) \
+        .filter(ub.ReadBook.library_id == get_current_library_id()).delete()
     ub.delete_download(book_id)
     ub.session_commit()
 

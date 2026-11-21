@@ -741,9 +741,12 @@ class CalibreDB:
             filter(self.common_filters(allow_show_archived)).first()
 
     def get_book_read_archived(self, book_id, read_column, allow_show_archived=False):
+        from . import get_current_library_id
+        lib_id = get_current_library_id()
         if not read_column:
             bd = (self.session.query(Books, ub.ReadBook.read_status, ub.ArchivedBook.is_archived).select_from(Books)
-                  .join(ub.ReadBook, and_(ub.ReadBook.user_id == int(current_user.id), ub.ReadBook.book_id == book_id),
+                  .join(ub.ReadBook, and_(ub.ReadBook.user_id == int(current_user.id), ub.ReadBook.book_id == book_id,
+                                          ub.ReadBook.library_id == lib_id),
                   isouter=True))
         else:
             try:
@@ -757,7 +760,8 @@ class CalibreDB:
                 bd = self.session.query(Books, None, ub.ArchivedBook.is_archived)
         return (bd.filter(Books.id == book_id)
                 .join(ub.ArchivedBook, and_(Books.id == ub.ArchivedBook.book_id,
-                                            int(current_user.id) == ub.ArchivedBook.user_id), isouter=True)
+                                            int(current_user.id) == ub.ArchivedBook.user_id,
+                                            ub.ArchivedBook.library_id == lib_id), isouter=True)
                 .filter(self.common_filters(allow_show_archived)).first())
 
     def get_book_by_uuid(self, book_uuid):
@@ -781,10 +785,14 @@ class CalibreDB:
 
     # Language and content filters for displaying in the UI
     def common_filters(self, allow_show_archived=False, return_all_languages=False):
+        # Bookhouse: restrict book-keyed app.db state to the current library
+        from . import get_current_library_id
+        lib_id = get_current_library_id()
         if not allow_show_archived:
             archived_books = (ub.session.query(ub.ArchivedBook)
                               .filter(ub.ArchivedBook.user_id==int(current_user.id))
                               .filter(ub.ArchivedBook.is_archived==True)
+                              .filter(ub.ArchivedBook.library_id==lib_id)
                               .all())
             archived_book_ids = [archived_book.book_id for archived_book in archived_books]
             archived_filter = Books.id.notin_(archived_book_ids)
@@ -825,11 +833,14 @@ class CalibreDB:
                     pos_content_cc_filter, ~neg_content_cc_filter, archived_filter)
 
     def generate_linked_query(self, config_read_column, database):
+        from . import get_current_library_id
+        lib_id = get_current_library_id()
         if not config_read_column:
             query = (self.session.query(database, ub.ArchivedBook.is_archived, ub.ReadBook.read_status)
                      .select_from(Books)
                      .outerjoin(ub.ReadBook,
-                                and_(ub.ReadBook.user_id == int(current_user.id), ub.ReadBook.book_id == Books.id)))
+                                and_(ub.ReadBook.user_id == int(current_user.id), ub.ReadBook.book_id == Books.id,
+                                     ub.ReadBook.library_id == lib_id)))
         else:
             try:
                 read_column = cc_classes[config_read_column]
@@ -841,7 +852,8 @@ class CalibreDB:
                 # Skip linking read column and return None instead of read status
                 query = self.session.query(database, None, ub.ArchivedBook.is_archived)
         return query.outerjoin(ub.ArchivedBook, and_(Books.id == ub.ArchivedBook.book_id,
-                                                     int(current_user.id) == ub.ArchivedBook.user_id))
+                                                     int(current_user.id) == ub.ArchivedBook.user_id,
+                                                     ub.ArchivedBook.library_id == lib_id))
 
     @staticmethod
     def get_checkbox_sorted(inputlist, state, offset, limit, order, combo=False):

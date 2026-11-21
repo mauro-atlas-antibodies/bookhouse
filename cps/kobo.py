@@ -179,9 +179,11 @@ def HandleSyncRequest():
                                                    ub.ArchivedBook.is_archived)
         changed_entries = (changed_entries
                            .join(db.Data).outerjoin(ub.ArchivedBook, and_(db.Books.id == ub.ArchivedBook.book_id,
-                                                                          ub.ArchivedBook.user_id == current_user.id))
+                                                                          ub.ArchivedBook.user_id == current_user.id,
+                                                                          ub.ArchivedBook.library_id == get_current_library_id()))
                            .filter(db.Books.id.notin_(calibre_db.session.query(ub.KoboSyncedBooks.book_id)
-                                                      .filter(ub.KoboSyncedBooks.user_id == current_user.id)))
+                                                      .filter(ub.KoboSyncedBooks.user_id == current_user.id)
+                                                      .filter(ub.KoboSyncedBooks.library_id == get_current_library_id())))
                            .filter(ub.BookShelf.date_added > sync_token.books_last_modified)
                            .filter(db.Data.format.in_(KOBO_FORMATS))
                            .filter(calibre_db.common_filters(allow_show_archived=True))
@@ -198,9 +200,11 @@ def HandleSyncRequest():
                                                    ub.ArchivedBook.is_archived)
         changed_entries = (changed_entries
                            .join(db.Data).outerjoin(ub.ArchivedBook, and_(db.Books.id == ub.ArchivedBook.book_id,
-                                                                          ub.ArchivedBook.user_id == current_user.id))
+                                                                          ub.ArchivedBook.user_id == current_user.id,
+                                                                          ub.ArchivedBook.library_id == get_current_library_id()))
                            .filter(db.Books.id.notin_(calibre_db.session.query(ub.KoboSyncedBooks.book_id)
-                                                      .filter(ub.KoboSyncedBooks.user_id == current_user.id)))
+                                                      .filter(ub.KoboSyncedBooks.user_id == current_user.id)
+                                                      .filter(ub.KoboSyncedBooks.library_id == get_current_library_id())))
                            .filter(calibre_db.common_filters(allow_show_archived=True))
                            .filter(db.Data.format.in_(KOBO_FORMATS))
                            .order_by(db.Books.last_modified)
@@ -268,7 +272,8 @@ def HandleSyncRequest():
 
     if only_kobo_shelves:
         changed_reading_states = changed_reading_states.join(ub.BookShelf,
-                                                             ub.KoboReadingState.book_id == ub.BookShelf.book_id)\
+                                                             and_(ub.KoboReadingState.book_id == ub.BookShelf.book_id,
+                                                                  ub.KoboReadingState.library_id == get_current_library_id()))\
             .join(ub.Shelf)\
             .filter(current_user.id == ub.Shelf.user_id)\
             .filter(ub.Shelf.kobo_sync,
@@ -661,7 +666,8 @@ def HandleTagRemoveItem(tag_id):
                 items_unknown_to_calibre.append(item)
                 continue
 
-            shelf.books.filter(ub.BookShelf.book_id == book.id).delete()
+            shelf.books.filter(ub.BookShelf.book_id == book.id,
+                               ub.BookShelf.library_id == get_current_library_id()).delete()
         except KeyError:
             items_unknown_to_calibre.append(item)
     ub.session_commit()
@@ -848,7 +854,8 @@ def get_ub_read_status(kobo_read_status):
 
 def get_or_create_reading_state(book_id):
     book_read = ub.session.query(ub.ReadBook).filter(ub.ReadBook.book_id == book_id,
-                                                     ub.ReadBook.user_id == int(current_user.id)).one_or_none()
+                                                     ub.ReadBook.user_id == int(current_user.id),
+                                                     ub.ReadBook.library_id == get_current_library_id()).one_or_none()
     if not book_read:
         book_read = ub.ReadBook(user_id=current_user.id, book_id=book_id, library_id=get_current_library_id())
     if not book_read.kobo_reading_state:

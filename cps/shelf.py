@@ -27,7 +27,7 @@ from flask import Blueprint, flash, redirect, request, url_for, abort
 from flask_babel import gettext as _
 from .cw_login import current_user
 from sqlalchemy.exc import InvalidRequestError, OperationalError
-from sqlalchemy.sql.expression import func, true
+from sqlalchemy.sql.expression import func, true, and_
 
 from . import config, db, logger, ub
 from . import get_current_library_db, get_current_library_id
@@ -59,7 +59,8 @@ def add_to_shelf(shelf_id, book_id):
         return "Sorry you are not allowed to add a book to the that shelf", 403
 
     book_in_shelf = ub.session.query(ub.BookShelf).filter(ub.BookShelf.shelf == shelf_id,
-                                                          ub.BookShelf.book_id == book_id).first()
+                                                          ub.BookShelf.book_id == book_id,
+                                                          ub.BookShelf.library_id == get_current_library_id()).first()
     if book_in_shelf:
         log.error("Book %s is already part of %s", book_id, shelf)
         if not xhr:
@@ -221,7 +222,8 @@ def remove_from_shelf(shelf_id, book_id):
 
     if check_shelf_edit_permissions(shelf):
         book_shelf = ub.session.query(ub.BookShelf).filter(ub.BookShelf.shelf == shelf_id,
-                                                           ub.BookShelf.book_id == book_id).first()
+                                                           ub.BookShelf.book_id == book_id,
+                                                           ub.BookShelf.library_id == get_current_library_id()).first()
 
         if book_shelf is None:
             log.error("Book %s already removed from %s", book_id, shelf)
@@ -332,7 +334,8 @@ def order_shelf(shelf_id):
         result = list()
         if shelf:
             result = calibre_db.session.query(db.Books) \
-                .join(ub.BookShelf, ub.BookShelf.book_id == db.Books.id, isouter=True) \
+                .join(ub.BookShelf, and_(ub.BookShelf.book_id == db.Books.id,
+                                         ub.BookShelf.library_id == get_current_library_id()), isouter=True) \
                 .add_columns(calibre_db.common_filters().label("visible")) \
                 .filter(ub.BookShelf.shelf == shelf_id).order_by(ub.BookShelf.order.asc()).all()
         return render_title_template('shelf_order.html', entries=result,
@@ -458,10 +461,12 @@ def change_shelf_order(shelf_id, order):
     calibre_db = get_current_library_db()
     result = calibre_db.session.query(db.Books).outerjoin(db.books_series_link,
                                                           db.Books.id == db.books_series_link.c.book)\
-        .outerjoin(db.Series).join(ub.BookShelf, ub.BookShelf.book_id == db.Books.id) \
+        .outerjoin(db.Series).join(ub.BookShelf, and_(ub.BookShelf.book_id == db.Books.id,
+                                                      ub.BookShelf.library_id == get_current_library_id())) \
         .filter(ub.BookShelf.shelf == shelf_id).order_by(*order).all()
     for index, entry in enumerate(result):
         book = ub.session.query(ub.BookShelf).filter(ub.BookShelf.shelf == shelf_id) \
+            .filter(ub.BookShelf.library_id == get_current_library_id()) \
             .filter(ub.BookShelf.book_id == entry.id).first()
         book.order = index
     ub.session_commit("Shelf-id:{} - Order changed".format(shelf_id))
@@ -512,15 +517,20 @@ def render_show_shelf(shelf_type, shelf_id, page_no, sort_param):
                                                            ub.BookShelf.shelf == shelf_id,
                                                            [ub.BookShelf.order.asc()],
                                                            True, config.config_read_column,
-                                                           ub.BookShelf, ub.BookShelf.book_id == db.Books.id)
+                                                           ub.BookShelf,
+                                                           and_(ub.BookShelf.book_id == db.Books.id,
+                                                                ub.BookShelf.library_id == get_current_library_id()))
         # delete shelf entries where book is not existent anymore, can happen if book is deleted outside calibre-web
         wrong_entries = calibre_db.session.query(ub.BookShelf) \
-            .join(db.Books, ub.BookShelf.book_id == db.Books.id, isouter=True) \
+            .join(db.Books, and_(ub.BookShelf.book_id == db.Books.id,
+                                 ub.BookShelf.library_id == get_current_library_id()), isouter=True) \
+            .filter(ub.BookShelf.library_id == get_current_library_id()) \
             .filter(db.Books.id == None).all()
         for entry in wrong_entries:
             log.info('Not existing book {} in {} deleted'.format(entry.book_id, shelf))
             try:
-                ub.session.query(ub.BookShelf).filter(ub.BookShelf.book_id == entry.book_id).delete()
+                ub.session.query(ub.BookShelf).filter(ub.BookShelf.book_id == entry.book_id) \
+                    .filter(ub.BookShelf.library_id == get_current_library_id()).delete()
                 ub.session.commit()
             except (OperationalError, InvalidRequestError) as e:
                 ub.session.rollback()

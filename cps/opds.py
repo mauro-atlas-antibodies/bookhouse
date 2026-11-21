@@ -32,7 +32,7 @@ from sqlalchemy.sql.expression import func, text, or_, and_, true
 from sqlalchemy.exc import InvalidRequestError, OperationalError
 
 from . import logger, config, db, ub, isoLanguages, constants
-from . import get_current_library_db
+from . import get_current_library_db, get_current_library_id
 from .usermanagement import requires_basic_auth_if_no_ano, auth
 from .helper import get_download_link, get_book_cover
 from .pagination import Pagination
@@ -142,7 +142,8 @@ def feed_hot():
     if not auth.current_user().check_visibility(constants.SIDEBAR_HOT):
         abort(404)
     off = request.args.get("offset") or 0
-    all_books = ub.session.query(ub.Downloads, func.count(ub.Downloads.book_id)).order_by(
+    all_books = ub.session.query(ub.Downloads, func.count(ub.Downloads.book_id)) \
+        .filter(ub.Downloads.library_id == get_current_library_id()).order_by(
         func.count(ub.Downloads.book_id).desc()).group_by(ub.Downloads.book_id)
     hot_books = all_books.offset(off).limit(config.config_books_per_page)
     entries = list()
@@ -436,15 +437,20 @@ def feed_shelf(book_id):
                                                            ub.BookShelf.shelf == shelf.id,
                                                            [ub.BookShelf.order.asc()],
                                                            True, config.config_read_column,
-                                                           ub.BookShelf, ub.BookShelf.book_id == db.Books.id)
+                                                           ub.BookShelf,
+                                                           and_(ub.BookShelf.book_id == db.Books.id,
+                                                                ub.BookShelf.library_id == get_current_library_id()))
         # delete shelf entries where book is not existent anymore, can happen if book is deleted outside calibre-web
         wrong_entries = calibre_db.session.query(ub.BookShelf) \
-            .join(db.Books, ub.BookShelf.book_id == db.Books.id, isouter=True) \
+            .join(db.Books, and_(ub.BookShelf.book_id == db.Books.id,
+                                 ub.BookShelf.library_id == get_current_library_id()), isouter=True) \
+            .filter(ub.BookShelf.library_id == get_current_library_id()) \
             .filter(db.Books.id == None).all()
         for entry in wrong_entries:
             log.info('Not existing book {} in {} deleted'.format(entry.book_id, shelf))
             try:
-                ub.session.query(ub.BookShelf).filter(ub.BookShelf.book_id == entry.book_id).delete()
+                ub.session.query(ub.BookShelf).filter(ub.BookShelf.book_id == entry.book_id) \
+                    .filter(ub.BookShelf.library_id == get_current_library_id()).delete()
                 ub.session.commit()
             except (OperationalError, InvalidRequestError) as e:
                 ub.session.rollback()

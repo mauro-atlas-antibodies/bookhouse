@@ -794,7 +794,10 @@ def update_download(book_id, user_id):
 
 # Delete non-existing downloaded books in calibre-web's own database
 def delete_download(book_id):
-    session.query(Downloads).filter(book_id == Downloads.book_id).delete()
+    from . import get_current_library_id
+    session.query(Downloads)\
+        .filter(book_id == Downloads.book_id) \
+        .filter(Downloads.library_id == get_current_library_id()).delete()
     try:
         session.commit()
     except exc.OperationalError:

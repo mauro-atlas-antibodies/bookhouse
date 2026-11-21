@@ -26,7 +26,7 @@ from sqlalchemy.sql.expression import func, not_, and_, or_, text, true
 from sqlalchemy.sql.functions import coalesce
 
 from . import logger, db, config, ub
-from . import get_current_library_db
+from . import get_current_library_db, get_current_library_id
 from .string_helper import strip_whitespaces
 from .usermanagement import login_required_if_no_ano
 from .render_template import render_title_template
@@ -186,6 +186,7 @@ def adv_search_shelf(q, include_shelf_inputs, exclude_shelf_inputs):
         in_shelf = (
             calibre_db.session.query(ub.BookShelf.id)
             .filter(ub.BookShelf.book_id == db.Books.id)
+            .filter(ub.BookShelf.library_id == get_current_library_id())
             .filter(ub.BookShelf.shelf.in_(include_shelf_inputs))
             .exists()
         )
@@ -194,6 +195,7 @@ def adv_search_shelf(q, include_shelf_inputs, exclude_shelf_inputs):
         ex_shelf = (
             calibre_db.session.query(ub.BookShelf.id)
             .filter(ub.BookShelf.book_id == db.Books.id)
+            .filter(ub.BookShelf.library_id == get_current_library_id())
             .filter(ub.BookShelf.shelf.in_(exclude_shelf_inputs))
             .exists()
         )
