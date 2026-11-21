@@ -110,6 +110,7 @@ calibre_db = db.CalibreDB(app)
 # Library registry: one CalibreDB instance per enabled library.
 # The main library reuses the legacy global calibre_db instance.
 lib_registries = {}
+main_library_id = None
 
 
 def get_library_db(lib_id):
@@ -123,6 +124,17 @@ def get_library_db_by_slug(slug):
     if lib is None:
         return None
     return lib_registries.get(lib.id)
+
+
+def get_current_library_db():
+    """Resolve the CalibreDB instance for the current request.
+
+    Resolves the default (main) library for now. Will later honor the
+    library identity present in the request route.
+    """
+    if lib_registries and main_library_id is not None:
+        return get_library_db(main_library_id) or calibre_db
+    return calibre_db
 
 web_server = WebServer()
 
@@ -178,9 +190,11 @@ def create_app():
     calibre_db.update_config(config, config.config_calibre_dir, cli_param.settings_path)
 
     # Load the library registry from the app DB registry table.
+    global main_library_id
     lib_registries.clear()
     for lib in ub.get_enabled_libraries():
         if lib.path == config.config_calibre_dir:
+            main_library_id = lib.id
             lib_registries[lib.id] = calibre_db
         else:
             lib_db = db.CalibreDB(app)
