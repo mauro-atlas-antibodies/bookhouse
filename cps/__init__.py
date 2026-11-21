@@ -145,10 +145,10 @@ def create_app():
 
     if sys.version_info < (3, 0):
         log.info(
-            '*** Python2 is EOL since end of 2019, this version of Calibre-Web is no longer supporting Python2, '
+            '*** Python2 is EOL since end of 2019, this version of Bookhouse is no longer supporting Python2, '
             'please update your installation to Python3 ***')
         print(
-            '*** Python2 is EOL since end of 2019, this version of Calibre-Web is no longer supporting Python2, '
+            '*** Python2 is EOL since end of 2019, this version of Bookhouse is no longer supporting Python2, '
             'please update your installation to Python3 ***')
         web_server.stop(True)
         sys.exit(5)
@@ -168,7 +168,7 @@ def create_app():
     requirements = dependency_check()
     for res in requirements:
         if res['found'] == "not installed":
-            message = ('Cannot import {name} module, it is needed to run calibre-web, '
+            message = ('Cannot import {name} module, it is needed to run Bookhouse, '
                        'please install it using "pip install {name}"').format(name=res["name"])
             log.info(message)
             print("*** " + message + " ***")
@@ -186,7 +186,7 @@ def create_app():
 
     if os.environ.get('FLASK_DEBUG'):
         cache_buster.init_cache_busting(app)
-    log.info('Starting Calibre Web...')
+    log.info('Starting Bookhouse...')
     Principal(app)
     lm.init_app(app)
     app.secret_key = os.getenv('SECRET_KEY', config_sql.get_flask_session_key(ub.session))
