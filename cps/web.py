@@ -195,6 +195,25 @@ def toggle_archived(book_id):
     return ""
 
 
+@web.route("/ajax/color_scheme", methods=["POST"])
+@user_login_required
+def set_color_scheme():
+    """Bookhouse: store the user's color scheme in view_settings."""
+    data = request.get_json(silent=True) or {}
+    scheme = data.get('scheme') or ''
+    if scheme not in ('', 'great_northern', 'red_room', 'ghostwood'):
+        return jsonify(result=False), 400
+    if current_user.view_settings is None:
+        current_user.view_settings = {}
+    if scheme:
+        current_user.view_settings['color'] = {'scheme': scheme}
+    else:
+        current_user.view_settings.pop('color', None)
+    flag_modified(current_user, "view_settings")
+    ub.session_commit("Color scheme for user {} set to '{}'".format(current_user.name, scheme))
+    return jsonify(result=True)
+
+
 @web.route("/ajax/view", methods=["POST"])
 @login_required_if_no_ano
 def update_view():

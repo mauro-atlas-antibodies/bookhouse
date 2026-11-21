@@ -127,6 +127,25 @@ def get_sidebar_config(kwargs=None):
         from . import get_current_library_slug, get_permitted_libraries
         g.libraries = get_permitted_libraries()
         g.current_library_slug = get_current_library_slug()
+
+        # Bookhouse: per-user color scheme (Twin Peaks palettes)
+        scheme = None
+        try:
+            from .cw_login import current_user as _cu
+            if _cu is not None and getattr(_cu, 'is_authenticated', False):
+                scheme = _cu.get_view_property('color', 'scheme')
+        except Exception:
+            scheme = None
+        if not scheme:
+            from flask import session as _sess
+            scheme = _sess.get('color_scheme')
+        if scheme in ('great_northern', 'red_room', 'ghostwood'):
+            g.color_scheme_class = 'bh-scheme-' + scheme
+            g.color_scheme = scheme
+        else:
+            g.color_scheme_class = ''
+            g.color_scheme = None
+
         # resolve the full current Library row (main library when unset)
         g.current_library = None
         if g.current_library_slug:
@@ -138,6 +157,8 @@ def get_sidebar_config(kwargs=None):
         g.libraries = []
         g.current_library_slug = None
         g.current_library = None
+        g.color_scheme_class = ''
+        g.color_scheme = None
 
     return sidebar, simple
 
