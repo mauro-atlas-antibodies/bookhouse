@@ -37,14 +37,6 @@
         <div class="home-btn"><a class="home-btn-tooltip" href="{{url_for('web.index', page=1)}}" data-toggle="tooltip" title="{{_('Home')}}" data-placement="bottom"></a></div>
         <div class="plexBack"><a class="back-btn-tooltip" href="{{url_for('web.index')}}" data-toggle="tooltip" title="{{_('Back')}}" data-placement="bottom"></a></div>
         {% if current_user.is_authenticated or g.allow_anonymous %}
-          {% if g.current_library %}
-            <div class="lib-info">
-              <div class="lib-name">{{ g.current_library.name }}</div>
-              {% if g.current_library.description %}
-                <div class="lib-desc">{{ g.current_library.description }}</div>
-              {% endif %}
-            </div>
-          {% endif %}
           {% if g.libraries|length > 1 %}
             <form class="navbar-form navbar-left" id="lib_select_form" action="{{url_for('basic.select_library')}}" method="POST">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
@@ -155,6 +147,14 @@
             <ul class="list-unstyled" id="scnd-nav" intent in-standard-append="nav.navigation" in-tablet-after="#main-nav" in-tablet-class="nav navbar-nav" in-mobile-after="#main-nav" in-mobile-class="nav navbar-nav">
               <li class="nav-head hidden-xs">{{_('Browse')}}</li>
               <li><a href="{{url_for('search.advanced_search')}}" id="advanced_search"><span class="glyphicon glyphicon-search"></span><span class="hidden-sm"> {{_('Advanced Search')}}</span></a></li>
+              {% if g.current_library %}
+              <li class="lib-info">
+                <div class="lib-name">{{ g.current_library.name }}</div>
+                {% if g.current_library.description %}
+                <div class="lib-desc">{{ g.current_library.description }}</div>
+                {% endif %}
+              </li>
+              {% endif %}
               {% for element in sidebar %}
                 {% if current_user.check_visibility(element['visibility']) and element['public'] %}
                     <li id="nav_{{element['id']}}" {% if page == element['page'] %}class="active"{% endif %}><a href="{% if element['no_param'] %}{{url_for(element['link'], data=element['page'])}}{%else%}{{url_for(element['link'], data=element['page'], sort_param='stored')}}{% endif %}"><span class="glyphicon {{element['glyph']}}"></span> <span class="nav-text">{{_(element['text'])|trim}}</span></a></li>

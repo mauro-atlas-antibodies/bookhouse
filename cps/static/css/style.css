@@ -528,12 +528,11 @@ body > div.container-fluid  {
   margin-top: 0;
 }
 
-/* Bookhouse: current library title + description under the switcher */
+/* Bookhouse: current library title + description in the navbar */
 .lib-info {
-  display: inline-block;
-  vertical-align: middle;
-  margin: 0 0 0 10px;
   line-height: 1.2;
+  padding: 12px 2px 6px;
+  margin-left: 8px;
 }
 .lib-info .lib-name {
   font-size: 14px;
