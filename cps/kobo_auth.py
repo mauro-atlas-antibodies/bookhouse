@@ -68,7 +68,8 @@ from flask import g, Blueprint, abort, request
 from .cw_login import login_user, current_user
 from flask_babel import gettext as _
 
-from . import logger, config, calibre_db, db, helper, ub, lm, limiter
+from . import logger, config, db, helper, ub, lm, limiter
+from . import get_current_library_db
 from .render_template import render_title_template
 from .usermanagement import user_login_required
 
@@ -107,6 +108,7 @@ def generate_auth_token(user_id):
         ub.session.add(auth_token)
         ub.session_commit()
 
+    calibre_db = get_current_library_db()
     books = calibre_db.session.query(db.Books).join(db.Data).all()
 
     for book in books:
