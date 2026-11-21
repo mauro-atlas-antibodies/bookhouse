@@ -53,7 +53,7 @@ except ImportError as e:
     UnacceptableAddressException = MissingSchema = BaseException
 
 from . import cli_param
-from . import get_current_library_db
+from . import get_current_library_db, get_current_library_id
 from .string_helper import strip_whitespaces
 from .tasks.convert import TaskConvert
 from . import logger, config, db, ub, fs
@@ -316,7 +316,7 @@ def edit_book_read_status(book_id, read_status=None):
     book = ub.session.query(ub.ReadBook).filter(and_(ub.ReadBook.user_id == int(current_user.id),
                                                      ub.ReadBook.book_id == book_id)).first()
     if not book:
-        read_book = ub.ReadBook(user_id=current_user.id, book_id=book_id)
+        read_book = ub.ReadBook(user_id=current_user.id, book_id=book_id, library_id=get_current_library_id())
         book = read_book
     if read_status is None:
         if book.read_status == ub.ReadBook.STATUS_FINISHED:
@@ -326,7 +326,7 @@ def edit_book_read_status(book_id, read_status=None):
     else:
         book.read_status = ub.ReadBook.STATUS_FINISHED if read_status == True else ub.ReadBook.STATUS_UNREAD
     if not book.kobo_reading_state:
-        kobo_reading_state = ub.KoboReadingState(user_id=current_user.id, book_id=book_id)
+        kobo_reading_state = ub.KoboReadingState(user_id=current_user.id, book_id=book_id, library_id=get_current_library_id())
         kobo_reading_state.current_bookmark = ub.KoboBookmark()
         kobo_reading_state.statistics = ub.KoboStatistics()
         book.kobo_reading_state = kobo_reading_state

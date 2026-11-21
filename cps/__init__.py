@@ -136,6 +136,15 @@ def get_current_library_db():
         return get_library_db(main_library_id) or calibre_db
     return calibre_db
 
+
+def get_current_library_id():
+    """Id of the library returned by get_current_library_db()."""
+    cdb = get_current_library_db()
+    for lib_id, db_inst in lib_registries.items():
+        if db_inst is cdb:
+            return lib_id
+    return main_library_id
+
 web_server = WebServer()
 
 updater_thread = Updater()

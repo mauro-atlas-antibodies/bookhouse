@@ -41,7 +41,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from . import constants, logger, isoLanguages, services, limiter
 from . import db, ub, config, app
 from . import kobo_sync_status
-from . import get_current_library_db
+from . import get_current_library_db, get_current_library_id
 from .search import render_search_results, render_adv_search_results
 from .gdriveutils import getFileFromEbooksFolder, do_gdrive_download
 from .helper import check_valid_domain, check_email, check_username, \
@@ -167,6 +167,7 @@ def set_bookmark(book_id, book_format):
 
     l_bookmark = ub.Bookmark(user_id=current_user.id,
                              book_id=book_id,
+                             library_id=get_current_library_id(),
                              format=book_format,
                              bookmark_key=bookmark_key)
     ub.session.merge(l_bookmark)

@@ -27,12 +27,15 @@ from sqlalchemy.sql.expression import or_, and_, true
 # Add the current book id to kobo_synced_books table for current user, if entry is already present,
 # do nothing (safety precaution)
 def add_synced_books(book_id):
+    from . import get_current_library_id
+    lib_id = get_current_library_id()
     is_present = ub.session.query(ub.KoboSyncedBooks).filter(ub.KoboSyncedBooks.book_id == book_id)\
         .filter(ub.KoboSyncedBooks.user_id == current_user.id).count()
     if not is_present:
         synced_book = ub.KoboSyncedBooks()
         synced_book.user_id = current_user.id
         synced_book.book_id = book_id
+        synced_book.library_id = lib_id
         ub.session.add(synced_book)
         ub.session_commit()
 
@@ -57,7 +60,7 @@ def change_archived_books(book_id, state=None, message=None):
     archived_book = ub.session.query(ub.ArchivedBook).filter(and_(ub.ArchivedBook.user_id == int(current_user.id),
                                                                   ub.ArchivedBook.book_id == book_id)).first()
     if not archived_book: # and (state == True or state == None):
-        archived_book = ub.ArchivedBook(user_id=current_user.id, book_id=book_id)
+        archived_book = ub.ArchivedBook(user_id=current_user.id, book_id=book_id, library_id=get_current_library_id())
 
     archived_book.is_archived = state if state != None else not archived_book.is_archived
     archived_book.last_modified = datetime.now(timezone.utc)        # toDo. Check utc timestamp

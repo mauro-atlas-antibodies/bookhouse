@@ -30,7 +30,7 @@ from sqlalchemy.exc import InvalidRequestError, OperationalError
 from sqlalchemy.sql.expression import func, true
 
 from . import config, db, logger, ub
-from . import get_current_library_db
+from . import get_current_library_db, get_current_library_id
 from .render_template import render_title_template
 from .usermanagement import login_required_if_no_ano, user_login_required
 
@@ -81,7 +81,7 @@ def add_to_shelf(shelf_id, book_id):
             return redirect(url_for('web.index'))
         return "%s is a invalid Book Id. Could not be added to Shelf" % book_id, 400
 
-    shelf.books.append(ub.BookShelf(shelf=shelf.id, book_id=book_id, order=maxOrder + 1))
+    shelf.books.append(ub.BookShelf(shelf=shelf.id, book_id=book_id, order=maxOrder + 1, library_id=get_current_library_id()))
     shelf.last_modified = datetime.now(timezone.utc)
     try:
         ub.session.merge(shelf)
@@ -184,7 +184,7 @@ def search_to_shelf(shelf_id):
 
         for book in books_for_shelf:
             maxOrder += 1
-            shelf.books.append(ub.BookShelf(shelf=shelf.id, book_id=book, order=maxOrder))
+            shelf.books.append(ub.BookShelf(shelf=shelf.id, book_id=book, order=maxOrder, library_id=get_current_library_id()))
         shelf.last_modified = datetime.now(timezone.utc)
         try:
             ub.session.merge(shelf)

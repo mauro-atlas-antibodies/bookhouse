@@ -382,6 +382,7 @@ class BookShelf(Base):
 
     id = Column(Integer, primary_key=True)
     book_id = Column(Integer)
+    library_id = Column(Integer)
     order = Column(Integer)
     shelf = Column(Integer, ForeignKey('shelf.id'))
     date_added = Column(DateTime, default=lambda: datetime.now(timezone.utc))
@@ -409,6 +410,7 @@ class ReadBook(Base):
 
     id = Column(Integer, primary_key=True)
     book_id = Column(Integer, unique=False)
+    library_id = Column(Integer, unique=False)
     user_id = Column(Integer, ForeignKey('user.id'), unique=False)
     read_status = Column(Integer, unique=False, default=STATUS_UNREAD, nullable=False)
     kobo_reading_state = relationship("KoboReadingState", uselist=False,
@@ -428,6 +430,7 @@ class Bookmark(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('user.id'))
     book_id = Column(Integer)
+    library_id = Column(Integer)
     format = Column(String(collation='NOCASE'))
     bookmark_key = Column(String)
 
@@ -439,6 +442,7 @@ class ArchivedBook(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('user.id'))
     book_id = Column(Integer)
+    library_id = Column(Integer)
     is_archived = Column(Boolean, unique=False)
     last_modified = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
@@ -448,6 +452,7 @@ class KoboSyncedBooks(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('user.id'))
     book_id = Column(Integer)
+    library_id = Column(Integer)
 
 # The Kobo ReadingState API keeps track of 4 timestamped entities:
 #   ReadingState, StatusInfo, Statistics, CurrentBookmark
@@ -459,6 +464,7 @@ class KoboReadingState(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('user.id'))
     book_id = Column(Integer)
+    library_id = Column(Integer)
     last_modified = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     priority_timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     current_bookmark = relationship("KoboBookmark", uselist=False, backref="kobo_reading_state", cascade="all, delete")
@@ -507,6 +513,7 @@ class Downloads(Base):
 
     id = Column(Integer, primary_key=True)
     book_id = Column(Integer)
+    library_id = Column(Integer)
     user_id = Column(Integer, ForeignKey('user.id'))
 
     def __repr__(self):
@@ -557,6 +564,9 @@ def bootstrap_library(path):
     if not path:
         return None
 
+    # Ensure the library_id columns exist (fresh or legacy app.db)
+    migrate_library_id_column(session.bind, session)
+
     path = os.path.abspath(path)
 
     existing_library = session.query(Library).filter(
@@ -564,18 +574,21 @@ def bootstrap_library(path):
     ).one_or_none()
 
     if existing_library:
+        backfill_library_ids(session)
         return existing_library
 
     if session.query(Library).count():
         return None
 
-    return add_library(
+    lib = add_library(
         name='Main Library',
         slug='main',
         description='Primary Bookhouse library',
         path=path,
         enabled=True,
     )
+    backfill_library_ids(session)
+    return lib
 
 class Library(Base):
     __tablename__ = 'library'
@@ -713,6 +726,42 @@ def migrate_Database(_session):
     migrate_registration_table(engine, _session)
     migrate_user_session_table(engine, _session)
     migrate_remote_auth_token_table(engine, _session)
+    migrate_library_id_column(engine, _session)
+
+
+# Bookhouse: tables keyed on Calibre book ids carry the owning library so that
+# books with identical ids in different libraries do not collide.
+LIBRARY_ID_TABLES = (
+    'book_shelf_link',
+    'book_read_link',
+    'bookmark',
+    'archived_book',
+    'kobo_synced_books',
+    'kobo_reading_state',
+    'downloads',
+)
+
+
+def migrate_library_id_column(engine, _session):
+    for table in LIBRARY_ID_TABLES:
+        with engine.connect() as conn:
+            cols = [row[1] for row in conn.execute(
+                text("PRAGMA table_info({})".format(table))).fetchall()]
+            if 'library_id' not in cols:
+                conn.execute(text("ALTER TABLE {} ADD COLUMN library_id INTEGER".format(table)))
+                conn.commit()
+
+
+def backfill_library_ids(_session):
+    """Set library_id to the first registered library for existing rows."""
+    lib = _session.query(Library).order_by(Library.id).first()
+    if lib is None:
+        return
+    engine = _session.bind
+    with engine.begin() as conn:
+        for table in LIBRARY_ID_TABLES:
+            conn.execute(text(
+                "UPDATE {} SET library_id = {} WHERE library_id IS NULL".format(table, lib.id)))
 
 
 def clean_database(_session):
@@ -729,10 +778,13 @@ def clean_database(_session):
 
 # Save downloaded books per user in calibre-web's own database
 def update_download(book_id, user_id):
+    # Bookhouse: attribute the download to the current library
+    from . import get_current_library_id
+    lib_id = get_current_library_id()
     check = session.query(Downloads).filter(Downloads.user_id == user_id).filter(Downloads.book_id == book_id).first()
 
     if not check:
-        new_download = Downloads(user_id=user_id, book_id=book_id)
+        new_download = Downloads(user_id=user_id, book_id=book_id, library_id=lib_id)
         session.add(new_download)
         try:
             session.commit()

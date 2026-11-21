@@ -44,7 +44,7 @@ from sqlalchemy.sql.expression import and_, or_
 from sqlalchemy.exc import StatementError
 
 from . import config, logger, kobo_auth, db, helper, shelf as shelf_lib, ub, csrf, kobo_sync_status
-from . import get_current_library_db
+from . import get_current_library_db, get_current_library_id
 from . import isoLanguages, limiter
 from .epub import get_epub_layout
 from .constants import COVER_THUMBNAIL_SMALL, COVER_THUMBNAIL_MEDIUM, COVER_THUMBNAIL_LARGE, BASE_DIR
@@ -590,7 +590,7 @@ def add_items_to_shelf(items, shelf):
 
             book_id = book.id
             if book_id not in book_ids_already_in_shelf:
-                shelf.books.append(ub.BookShelf(book_id=book_id))
+                shelf.books.append(ub.BookShelf(book_id=book_id, library_id=get_current_library_id()))
         except KeyError:
             items_unknown_to_calibre.append(item)
     return items_unknown_to_calibre
@@ -850,9 +850,9 @@ def get_or_create_reading_state(book_id):
     book_read = ub.session.query(ub.ReadBook).filter(ub.ReadBook.book_id == book_id,
                                                      ub.ReadBook.user_id == int(current_user.id)).one_or_none()
     if not book_read:
-        book_read = ub.ReadBook(user_id=current_user.id, book_id=book_id)
+        book_read = ub.ReadBook(user_id=current_user.id, book_id=book_id, library_id=get_current_library_id())
     if not book_read.kobo_reading_state:
-        kobo_reading_state = ub.KoboReadingState(user_id=book_read.user_id, book_id=book_id)
+        kobo_reading_state = ub.KoboReadingState(user_id=book_read.user_id, book_id=book_id, library_id=get_current_library_id())
         kobo_reading_state.current_bookmark = ub.KoboBookmark()
         kobo_reading_state.statistics = ub.KoboStatistics()
         book_read.kobo_reading_state = kobo_reading_state
