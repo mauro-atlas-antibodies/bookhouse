@@ -551,16 +551,14 @@ class AlchemyEncoder(json.JSONEncoder):
 
 
 class CalibreDB:
-    config = None
-    config_calibre_dir = None
-    app_db_path = None
 
-    def __init__(self, _app: Flask=None):  # , expire_on_commit=True, init=False):
-        """ Initialize a new CalibreDB session
-        """
+    def __init__(self, _app: Flask=None):
+        """ Initialize a new CalibreDB session """
         self.Session = None
-        #if init:
-        #    self.init_db(expire_on_commit)
+        self.config = None
+        self.config_calibre_dir = None
+        self.app_db_path = None
+
         if _app is not None and not _app._got_first_request:
             self.init_app(_app)
 
@@ -677,26 +675,23 @@ class CalibreDB:
             g.lib_sql = self.connect()
         return g.lib_sql
 
-    @classmethod
-    def update_config(cls, config, config_calibre_dir, app_db_path):
-        cls.config = config
-        cls.config_calibre_dir = config_calibre_dir
-        cls.app_db_path = app_db_path
-
+    def update_config(self, config, config_calibre_dir, app_db_path):
+        self.config = config
+        self.config_calibre_dir = config_calibre_dir
+        self.app_db_path = app_db_path
 
     def connect(self):
         return self.setup_db(self.config_calibre_dir, self.app_db_path)
 
-    @classmethod
-    def setup_db(cls, config_calibre_dir, app_db_path):
+    def setup_db(self, config_calibre_dir, app_db_path):
 
         if not config_calibre_dir:
-            cls.config.invalidate()
+            self.config.invalidate()
             return None
 
         dbpath = os.path.join(config_calibre_dir, "metadata.db")
         if not os.path.exists(dbpath):
-            cls.config.invalidate()
+            self.config.invalidate()
             return None
 
         try:
@@ -715,15 +710,15 @@ class CalibreDB:
             conn = engine.connect()
             # conn.text_factory = lambda b: b.decode(errors = 'ignore') possible fix for #1302
         except Exception as ex:
-            cls.config.invalidate(ex)
+            self.config.invalidate(ex)
             return None
 
-        cls.config.db_configured = True
+        self.config.db_configured = True
 
         if not cc_classes:
             try:
                 cc = conn.execute(text("SELECT id, datatype FROM custom_columns"))
-                cls.setup_db_cc_classes(cc)
+                self.setup_db_cc_classes(cc)
             except OperationalError as e:
                 log.error_or_exception(e)
                 return None
