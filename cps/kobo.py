@@ -43,7 +43,8 @@ from sqlalchemy import func
 from sqlalchemy.sql.expression import and_, or_
 from sqlalchemy.exc import StatementError
 
-from . import config, logger, kobo_auth, db, calibre_db, helper, shelf as shelf_lib, ub, csrf, kobo_sync_status
+from . import config, logger, kobo_auth, db, helper, shelf as shelf_lib, ub, csrf, kobo_sync_status
+from . import get_current_library_db
 from . import isoLanguages, limiter
 from .epub import get_epub_layout
 from .constants import COVER_THUMBNAIL_SMALL, COVER_THUMBNAIL_MEDIUM, COVER_THUMBNAIL_LARGE, BASE_DIR
@@ -141,6 +142,7 @@ def convert_to_kobo_timestamp_string(timestamp):
 @kobo.route("/v1/library/sync")
 @requires_kobo_auth
 def HandleSyncRequest():
+    calibre_db = get_current_library_db()
     if not current_user.role_download():
         log.info("Users need download permissions for syncing library to Kobo reader")
         return abort(403)
@@ -336,6 +338,7 @@ def generate_sync_response(sync_token, sync_results, set_cont=False):
 @requires_kobo_auth
 @download_required
 def HandleMetadataRequest(book_uuid):
+    calibre_db = get_current_library_db()
     if not current_app.wsgi_app.is_proxied:
         log.debug('Kobo: Received unproxied request, changed request port to external server port')
     log.info("Kobo library metadata request received for book %s" % book_uuid)
@@ -571,6 +574,7 @@ def HandleTagUpdate(tag_id):
 
 # Adds items to the given shelf.
 def add_items_to_shelf(items, shelf):
+    calibre_db = get_current_library_db()
     book_ids_already_in_shelf = set([book_shelf.book_id for book_shelf in shelf.books])
     items_unknown_to_calibre = []
     for item in items:
@@ -626,6 +630,7 @@ def HandleTagAddItem(tag_id):
 @kobo.route("/v1/library/tags/<tag_id>/items/delete", methods=["POST"])
 @requires_kobo_auth
 def HandleTagRemoveItem(tag_id):
+    calibre_db = get_current_library_db()
     items = None
     try:
         tag_request = request.json
@@ -733,6 +738,7 @@ def sync_shelves(sync_token, sync_results, only_kobo_shelves=False):
 
 # Creates a Kobo "Tag" object from an ub.Shelf object
 def create_kobo_tag(shelf):
+    calibre_db = get_current_library_db()
     tag = {
         "Created": convert_to_kobo_timestamp_string(shelf.created),
         "Id": shelf.uuid,
@@ -759,6 +765,7 @@ def create_kobo_tag(shelf):
 @kobo.route("/v1/library/<book_uuid>/state", methods=["GET", "PUT"])
 @requires_kobo_auth
 def HandleStateRequest(book_uuid):
+    calibre_db = get_current_library_db()
     book = calibre_db.get_book_by_uuid(book_uuid)
     if not book or not book.data:
         log.info("Book %s not found in database", book_uuid)
@@ -953,6 +960,7 @@ def TopLevelEndpoint():
 @kobo.route("/v1/library/<book_uuid>", methods=["DELETE"])
 @requires_kobo_auth
 def HandleBookDeletionRequest(book_uuid):
+    calibre_db = get_current_library_db()
     log.info("Kobo book delete request received for book %s" % book_uuid)
     book = calibre_db.get_book_by_uuid(book_uuid)
     if not book:
