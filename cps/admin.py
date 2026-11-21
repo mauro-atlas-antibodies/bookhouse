@@ -176,11 +176,9 @@ def shutdown():
 @user_login_required
 @admin_required
 def queue_metadata_backup():
-    show_text = {}
-    log.warning("Queuing all books for metadata backup")
-    helper.set_all_metadata_dirty()
-    show_text['text'] = _('Success! Books queued for Metadata Backup, please check Tasks for result')
-    return json.dumps(show_text)
+    # Bookhouse: disabled — Calibre libraries are strictly read-only.
+    from flask import abort as _abort
+    _abort(403)
 
 
 # method is available without login and not protected by CSRF to make it easy reachable, is per default switched off

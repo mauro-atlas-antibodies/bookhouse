@@ -35,9 +35,8 @@ def get_scheduled_tasks(reconnect=True):
     # Delete temp folder
     tasks.append([lambda: TaskClean(), 'delete temp', True])
 
-    # Generate metadata.opf file for each changed book
-    if config.schedule_metadata_backup:
-        tasks.append([lambda: TaskBackupMetadata("en"), 'backup metadata', False])
+    # Bookhouse: metadata backup disabled — Calibre libraries are strictly
+    # read-only, .opf backups would write into the library directory.
 
     # Generate all missing book cover thumbnails
     if config.schedule_generate_book_covers:
