@@ -613,9 +613,16 @@ body.bh-scheme-great_northern .navbar-default .navbar-nav > li > a {
   color: #d9a441;
 }
 body.bh-scheme-great_northern .navbar-brand .bookhouse-brand { color: #d9a441; }
-body.bh-scheme-great_northern #scnd-nav a { color: #f5e7bd; font-weight: 500; }
-body.bh-scheme-great_northern #scnd-nav a:hover { color: #ffcf6e; }
-body.bh-scheme-great_northern #scnd-nav .nav-head { color: #e34a51; }
+/* Bookhouse round 3: dark GREEN sidebar menu (user pick) */
+body.bh-scheme-great_northern .col-sm-2 {
+  background-color: #1e3a27;
+}
+body.bh-scheme-great_northern .navigation {
+  background-color: transparent;
+}
+body.bh-scheme-great_northern #scnd-nav a { color: #f4efe4 !important; font-weight: 600; }
+body.bh-scheme-great_northern #scnd-nav a:hover { color: #ffcf6e !important; background: rgba(255, 255, 255, 0.08); }
+body.bh-scheme-great_northern #scnd-nav .nav-head { color: #ffcf6e !important; }
 body.bh-scheme-great_northern .btn-primary {
   background-color: #b5232a;
   border-color: #8c1a20;
@@ -710,15 +717,15 @@ body.bh-scheme-ghostwood .navigation .create-shelf a:hover {
 
 /* Great Northern: sidebar legibility round 2 */
 body.bh-scheme-great_northern #scnd-nav li a {
-  color: #f8f0da;
+  color: #f4efe4 !important;
   font-weight: 600;
 }
 body.bh-scheme-great_northern #scnd-nav li a:hover {
-  color: #ffcf6e;
-  background: rgba(217, 164, 65, 0.15);
+  color: #ffcf6e !important;
+  background: rgba(255, 255, 255, 0.08);
 }
-body.bh-scheme-great_northern .lib-info .lib-name { color: #f5e7bd; }
-body.bh-scheme-great_northern .lib-info .lib-desc { color: #c9b28a; }
+body.bh-scheme-great_northern .lib-info .lib-name { color: #f4efe4; }
+body.bh-scheme-great_northern .lib-info .lib-desc { color: #cfe0d2; }
 body.bh-scheme-red_room .lib-info .lib-name { color: #e8ddd0; }
 body.bh-scheme-red_room .lib-info .lib-desc { color: #b7a58f; }
 body.bh-scheme-ghostwood .lib-info .lib-name { color: #243b2f; }
