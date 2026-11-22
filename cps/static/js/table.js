@@ -532,6 +532,15 @@ $(function() {
         checkboxHeader: true,
         maintainMetaData: true,
         responseHandler: responseHandler,
+        onLoadSuccess: function (data) {
+            // Bookhouse: no results (empty library or filter) -> disable exports
+            var empty = !data || !data.total;
+            $("#export_books_list, #export_books_list_json").toggleClass("disabled", empty);
+            $("#export_books_list, #export_books_list_json").attr("aria-disabled", empty);
+        },
+        formatNoMatches: function () {
+            return "No books match the current filter";
+        },
         columns: column,
         // eslint-disable-next-line no-unused-vars
         onEditableSave: function (field, row, oldvalue, $el) {
