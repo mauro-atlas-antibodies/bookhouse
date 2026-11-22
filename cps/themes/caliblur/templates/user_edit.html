@@ -2,7 +2,7 @@
 {% block body %}
 <img class="admin-user-background" src="{{ url_for('static', filename='css/img/user-icon.svg') }}" alt="" aria-hidden="true">
 <div class="discover">
-  <h1>{{title}}</h1>
+  <h2>{{title}}</h2>
   <form role="form" method="POST" autocomplete="off">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="col-md-10 col-lg-8">

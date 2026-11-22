@@ -14,7 +14,7 @@
       {% if current_user.is_authenticated or g.allow_anonymous %}
         <nav>
           <a href="{{url_for('basic.index')}}">
-            <span><h1>{{_('Home')}}</h1></span>
+            <span><h2>{{_('Home')}}</h2></span>
           </a>
           <div class="search">
             <form role="search" action="{{url_for('basic.index')}}" method="GET">
