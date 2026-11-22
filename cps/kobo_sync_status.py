@@ -61,6 +61,7 @@ def remove_synced_book(book_id, all=False, session=None):
 # If state == none, it will toggle the archive state of the passed book_id. 
 # state = true archives it, state = false unarchives it
 def change_archived_books(book_id, state=None, message=None):
+    from . import get_current_library_id
     archived_book = ub.session.query(ub.ArchivedBook).filter(and_(ub.ArchivedBook.user_id == int(current_user.id),
                                                                   ub.ArchivedBook.book_id == book_id,
                                                                   ub.ArchivedBook.library_id == get_current_library_id())).first()

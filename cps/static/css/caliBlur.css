@@ -8104,3 +8104,17 @@ li.lib-info form.navbar-form {
   margin: 0;
   padding: 0 15px;
 }
+
+/* Bookhouse: lib text stacking + profile scheme select */
+li.lib-info .lib-text {
+  display: flex;
+  flex-direction: column;
+}
+li.lib-info .lib-desc,
+li.lib-info .lib-text .lib-desc {
+  font-weight: bold;
+}
+.bookhouse-color-profile select {
+  max-width: 320px;
+  display: block;
+}
