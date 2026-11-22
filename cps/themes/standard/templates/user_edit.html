@@ -146,7 +146,8 @@
       <div class="checkbox">
         <label>
           <input type="checkbox" name="access_library" value="{{ lib.id }}"
-                 {% if lib.id == main_library_id or lib.id in user_library_ids %}checked{% endif %}>
+                 {% if lib.id == main_library_id or lib.id in user_library_ids %}checked{% endif %}
+                 {% if profile %}disabled{% endif %}>
           {{ lib.name }}{% if lib.description %} <span class="text-muted">— {{ lib.description }}</span>{% endif %}
         </label>
       </div>

@@ -41,7 +41,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from . import constants, logger, isoLanguages, services, limiter
 from . import db, ub, config, app
 from . import kobo_sync_status
-from . import get_current_library_db, get_current_library_id
+from . import get_current_library_db, get_current_library_id, get_current_main_library_id
 from .search import render_search_results, render_adv_search_results
 from .gdriveutils import getFileFromEbooksFolder, do_gdrive_download
 from .helper import check_valid_domain, check_email, check_username, \
@@ -1617,7 +1617,10 @@ def profile():
                                  title=_("%(name)s's Profile", name=current_user.name),
                                  page="me",
                                  registered_oauth=local_oauth_check,
-                                 oauth_status=oauth_status)
+                                 oauth_status=oauth_status,
+                                 libraries=ub.get_all_libraries_ordered(),
+                                 user_library_ids=ub.get_user_library_ids(current_user.id),
+                                 main_library_id=get_current_main_library_id())
 
 
 # ###################################Show single book ##################################################################
