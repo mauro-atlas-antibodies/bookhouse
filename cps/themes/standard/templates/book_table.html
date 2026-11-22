@@ -55,7 +55,7 @@
             <th data-field="id" id="id" data-visible="false" data-switchable="false"></th>
             {{ text_table_row('title', _('Enter Title'),_('Title'), true, true) }}
             {{ text_table_row('authors', _('Enter Authors'),_('Authors'), true, true) }}
-            {{ text_table_row('tags', _('Enter Categories'),_('Categories'), false, true) }}
+            {{ text_table_row('tags', _('Enter Tags'),_('Tags'), false, true) }}
             {{ text_table_row('series', _('Enter Series'),_('Series'), false, true) }}
             <th data-field="series_index" id="series_index" data-visible="{{visiblility.get('series_index')}}"  data-formatter="seriesIndexFormatter" data-edit-validate="{{ _('This Field is Required') }}" data-sortable="true" {% if current_user.role_edit() %} data-editable-type="number" data-editable-placeholder="1" data-editable-step="0.01" data-editable-min="0" data-editable-url="{{ url_for('edit-book.edit_list_book', param='series_index')}}" data-edit="true" data-editable-title="{{_('Enter Title')}}"{% endif %}>{{_('Series Index')}}</th>
             {{ text_table_row('languages', _('Enter Languages'),_('Languages'), false, true) }}
@@ -255,7 +255,7 @@
             <input class="form-control" id="authors_input">
             <p></p>
 
-            Categories:
+            Tags:
             <input class="form-control" id="categories_input">
             <p></p>
 
