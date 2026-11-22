@@ -632,7 +632,7 @@ body.bh-scheme-great_northern .btn-default {
   border-color: #c9bda1;
   color: #33291d;
 }
-body.bh-scheme-great_northern h2, body.bh-scheme-great_northern h3 { color: #2c6e3f; }
+body.bh-scheme-great_northern h1, body.bh-scheme-great_northern h2, body.bh-scheme-great_northern h3 { color: #2c6e3f; }
 body.bh-scheme-great_northern .bookhouse-side-logo { background: none; padding: 0; border: none; box-shadow: none; }
 
 /* — Option B: Red Room — */
@@ -660,7 +660,7 @@ body.bh-scheme-red_room .btn-default {
   border-color: #4a3f34;
   color: #e8ddd0;
 }
-body.bh-scheme-red_room h2, body.bh-scheme-red_room h3 { color: #e34a51; }
+body.bh-scheme-red_room h1, body.bh-scheme-red_room h2, body.bh-scheme-red_room h3 { color: #e34a51; }
 body.bh-scheme-red_room .navbar-default {
   border-bottom: 6px solid;
   border-image: repeating-linear-gradient(45deg, #8c1a20 0 8px, #12100e 8px 16px) 1;
@@ -686,7 +686,7 @@ body.bh-scheme-ghostwood .navbar-brand .bookhouse-brand { color: #243b2f; }
 body.bh-scheme-ghostwood #scnd-nav a { color: #2c6e3f; }
 body.bh-scheme-ghostwood #scnd-nav .nav-head { color: #b5232a; }
 body.bh-scheme-ghostwood .btn-primary { background-color: #2c6e3f; border-color: #245c33; }
-body.bh-scheme-ghostwood h2, body.bh-scheme-ghostwood h3 { color: #b5232a; }
+body.bh-scheme-ghostwood h1, body.bh-scheme-ghostwood h2, body.bh-scheme-ghostwood h3 { color: #b5232a; }
 
 /* Bookhouse: palette refinements (round 2) ------------------------------ */
 
@@ -748,7 +748,7 @@ body.bh-scheme-ghostwood .table th a:hover {
 
 /* Bookhouse: uniform page headers across all pages and schemes */
 body h1 {
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 700;
   margin: 30px 0 18px;
   letter-spacing: 0.2px;
