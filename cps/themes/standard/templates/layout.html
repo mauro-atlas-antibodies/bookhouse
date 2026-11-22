@@ -17,7 +17,7 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='bookhouse_favicon.ico', v=4) }}">
     <link href="{{ url_for('static', filename='css/libs/bootstrap.min.css') }}" rel="stylesheet" media="screen">
     {% block header %}{% endblock %}
-    <link href="{{ url_for('static', filename='css/style.css', v=13) }}" rel="stylesheet" media="screen">
+    <link href="{{ url_for('static', filename='css/style.css', v=14) }}" rel="stylesheet" media="screen">
     <link href="{{ url_for('static', filename='css/upload.css') }}" rel="stylesheet" media="screen">
   </head>
   <body class="{{ page }} {{ bodyClass }} {{ g.color_scheme_class }}">
@@ -35,19 +35,6 @@
         </div>
         {% if current_user.is_authenticated or g.allow_anonymous %}
           {% if g.libraries|length > 1 %}
-            <form class="navbar-form navbar-left" id="lib_select_form" action="{{url_for('basic.select_library')}}" method="POST">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-              <input type="hidden" name="lib_slug" id="lib_slug_holder" value="{{ g.current_library_slug or '' }}"/>
-              <div class="form-group">
-                <label for="lib_select" class="sr-only">{{_('Library')}}</label>
-                <select id="lib_select" name="lib_slug_display" class="form-control input-sm"
-                        onchange="document.getElementById('lib_slug_holder').value=this.value;document.getElementById('lib_select_form').submit();">
-                  {% for lib in g.libraries %}
-                    <option value="{{ lib.slug }}" {% if lib.slug == g.current_library_slug %}selected{% endif %}>{{ lib.name }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </form>
           {% endif %}
           <form class="navbar-form navbar-left" role="search" action="{{url_for('search.simple_search')}}" method="GET">
             <div class="form-group input-group input-group-sm">
@@ -68,6 +55,21 @@
               <div class="lib-name">{{ g.current_library.name }}</div>
               {% if g.current_library.description %}
               <div class="lib-desc">{{ g.current_library.description }}</div>
+              {% endif %}
+              {% if g.libraries|length > 1 %}
+              <form class="navbar-form" id="lib_select_form" action="{{url_for('basic.select_library')}}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="lib_slug" id="lib_slug_holder" value="{{ g.current_library_slug or '' }}"/>
+                <div class="form-group">
+                  <label for="lib_select" class="sr-only">{{_('Library')}}</label>
+                  <select id="lib_select" name="lib_slug_display" class="form-control input-sm"
+                          onchange="document.getElementById('lib_slug_holder').value=this.value;document.getElementById('lib_select_form').submit();">
+                    {% for lib in g.libraries %}
+                      <option value="{{ lib.slug }}" {% if lib.slug == g.current_library_slug %}selected{% endif %}>{{ lib.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </form>
               {% endif %}
             </li>
             {% endif %}
@@ -95,22 +97,22 @@
                 <li><a id="top_admin" href="{{url_for('admin.admin')}}"><span class="glyphicon glyphicon-dashboard"></span> <span class="hidden-sm">{{_('Admin')}}</span></a></li>
               {% endif %}
               {% if current_user.is_authenticated %}
+                <li class="bh-scheme-nav">
+                  <span class="bh-scheme-label hidden-sm">{{_('Color Scheme')}}</label>
+                  <select id="bh_scheme" class="form-control input-sm"
+                          onchange="fetch('{{ url_for('web.set_color_scheme') }}', {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token() }}'}, body: JSON.stringify({scheme: this.value})}).then(()=>location.reload());">
+                    <option value="">{{_('Default')}}</option>
+                    <option value="great_northern" {% if g.color_scheme == 'great_northern' %}selected{% endif %}>{{_('Great Northern')}}</option>
+                    <option value="red_room" {% if g.color_scheme == 'red_room' %}selected{% endif %}>{{_('Red Room')}}</option>
+                    <option value="ghostwood" {% if g.color_scheme == 'ghostwood' %}selected{% endif %}>{{_('Ghostwood Day')}}</option>
+                  </select>
+                </li>
                 <li class="dropdown" id="top_user">
                   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                     <span class="glyphicon glyphicon-user"></span> <span class="hidden-sm">{{current_user.name}}</span> <span class="caret"></span>
                   </a>
                   <ul class="dropdown-menu dropdown-menu-right">
                     <li><a href="{{url_for('web.profile')}}"><span class="glyphicon glyphicon-cog"></span> {{_('Profile')}}</a></li>
-                    <li class="dropdown-header bh-scheme-header">{{_('Color Scheme')}}</li>
-                    <li class="bh-scheme-select">
-                      <select id="bh_scheme" class="form-control input-sm"
-                              onchange="fetch('{{ url_for('web.set_color_scheme') }}', {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token() }}'}, body: JSON.stringify({scheme: this.value})}).then(()=>location.reload());">
-                        <option value="">{{_('Default')}}</option>
-                        <option value="great_northern" {% if g.color_scheme == 'great_northern' %}selected{% endif %}>{{_('Great Northern')}}</option>
-                        <option value="red_room" {% if g.color_scheme == 'red_room' %}selected{% endif %}>{{_('Red Room')}}</option>
-                        <option value="ghostwood" {% if g.color_scheme == 'ghostwood' %}selected{% endif %}>{{_('Ghostwood Day')}}</option>
-                      </select>
-                    </li>
                     <li role="separator" class="divider"></li>
                     <li><a id="logout" href="{{url_for('web.logout', next=(request.path + "?" + request.query_string.decode("utf-8")).rstrip("?"))}}"><span class="glyphicon glyphicon-log-out"></span> {{_('Logout')}}</a></li>
                   </ul>

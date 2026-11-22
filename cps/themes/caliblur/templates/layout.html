@@ -17,9 +17,9 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='bookhouse_favicon.ico', v=4) }}">
     <link href="{{ url_for('static', filename='css/libs/bootstrap.min.css') }}" rel="stylesheet" media="screen">
     {% block header %}{% endblock %}
-    <link href="{{ url_for('static', filename='css/style.css', v=13) }}" rel="stylesheet" media="screen">
+    <link href="{{ url_for('static', filename='css/style.css', v=14) }}" rel="stylesheet" media="screen">
     <link href="{{ url_for('static', filename='css/upload.css') }}" rel="stylesheet" media="screen">
-    <link href="{{ url_for('static', filename='css/caliBlur.css', v=13) }}" rel="stylesheet" media="screen">
+    <link href="{{ url_for('static', filename='css/caliBlur.css', v=14) }}" rel="stylesheet" media="screen">
     <link href="{{ url_for('static', filename='css/caliBlur_override.css') }}" rel="stylesheet" media="screen">
   </head>
   <body class="{{ page }} {{ bodyClass }} {{ g.color_scheme_class }} blur{% if page == 'stat' %} stats{% endif %}{% if page in ['config', 'uiconfig', 'newuser', 'edituser', 'mailset', 'usertable', 'dbconfig'] %} admin{% endif %}{% if page == 'advsearch' %} advanced_search{% endif %}" data-readmore-more="{{_('Read more')}}" data-readmore-less="{{_('Read less')}}">
@@ -38,22 +38,7 @@
         <div class="home-btn"><a class="home-btn-tooltip" href="{{url_for('web.index', page=1)}}" data-toggle="tooltip" title="{{_('Home')}}" data-placement="bottom"></a></div>
         <div class="plexBack"><a class="back-btn-tooltip" href="{{url_for('web.index')}}" data-toggle="tooltip" title="{{_('Back')}}" data-placement="bottom"></a></div>
         {% if current_user.is_authenticated or g.allow_anonymous %}
-          {% if g.libraries|length > 1 %}
-            <form class="navbar-form navbar-left" id="lib_select_form" action="{{url_for('basic.select_library')}}" method="POST">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-              <input type="hidden" name="lib_slug" id="lib_slug_holder" value="{{ g.current_library_slug or '' }}"/>
-              <div class="form-group">
-                <label for="lib_select" class="sr-only">{{_('Library')}}</label>
-                <select id="lib_select" name="lib_slug_display" class="form-control input-sm"
-                        onchange="document.getElementById('lib_slug_holder').value=this.value;document.getElementById('lib_select_form').submit();">
-                  {% for lib in g.libraries %}
-                    <option value="{{ lib.slug }}" {% if lib.slug == g.current_library_slug %}selected{% endif %}>{{ lib.name }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </form>
-          {% endif %}
-          <form class="navbar-form navbar-left" role="search" action="{{url_for('search.simple_search')}}" method="GET">
+          <form class="navbar-form navbar-left" role="search"" action="{{url_for('search.simple_search')}}" method="GET">
             <div class="form-group input-group input-group-sm">
               <label for="query" class="sr-only">{{_('Search')}}</label>
               <span class="query-search-icon glyphicon glyphicon-search" aria-hidden="true"></span>
@@ -72,19 +57,19 @@
           {% endif %}
           <ul class="nav navbar-nav navbar-right" id="main-nav">
             {% if current_user.is_authenticated or g.allow_anonymous %}
+              <li class="bh-scheme-nav">
+                <span class="bh-scheme-label hidden-sm">{{_('Color Scheme')}}</label>
+                <select id="bh_scheme" class="form-control input-sm"
+                        onchange="fetch('{{ url_for('web.set_color_scheme') }}', {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token() }}'}, body: JSON.stringify({scheme: this.value})}).then(()=>location.reload());">
+                  <option value="">{{_('Default')}}</option>
+                  <option value="great_northern" {% if g.color_scheme == 'great_northern' %}selected{% endif %}>{{_('Great Northern')}}</option>
+                  <option value="red_room" {% if g.color_scheme == 'red_room' %}selected{% endif %}>{{_('Red Room')}}</option>
+                  <option value="ghostwood" {% if g.color_scheme == 'ghostwood' %}selected{% endif %}>{{_('Ghostwood Day')}}</option>
+                </select>
+              </li>
               <li class="dropdown"><a href="#" class="dropdown-toggle profileDrop send-btn-tooltip dropdown" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" data-toggle-two="tooltip" title="{{_('Account')}}" data-placement="bottom" data-viewport="#main-nav"><span class="profileDropIcon" aria-hidden="true"><img src="{{ url_for('static', filename='css/img/user-icon.svg') }}" alt=""></span></a><span class="hidden-sm">{{current_user.name}}</span>
                 <ul class="dropdown-menu profileDropli">
                     <li><a id="top_user" href="{{url_for('web.profile')}}" ><span class="glyphicon glyphicon-user"></span> <span class="hidden-sm">{{current_user.name}}</span></a></li>
-                    <li class="dropdown-header bh-scheme-header">{{_('Color Scheme')}}</li>
-                    <li class="bh-scheme-select">
-                      <select id="bh_scheme" class="form-control input-sm"
-                              onchange="fetch('{{ url_for('web.set_color_scheme') }}', {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token() }}'}, body: JSON.stringify({scheme: this.value})}).then(()=>location.reload());">
-                        <option value="">{{_('Default')}}</option>
-                        <option value="great_northern" {% if g.color_scheme == 'great_northern' %}selected{% endif %}>{{_('Great Northern')}}</option>
-                        <option value="red_room" {% if g.color_scheme == 'red_room' %}selected{% endif %}>{{_('Red Room')}}</option>
-                        <option value="ghostwood" {% if g.color_scheme == 'ghostwood' %}selected{% endif %}>{{_('Ghostwood Day')}}</option>
-                      </select>
-                    </li>
                     {% if not current_user.is_anonymous %}
                     <li class="dropdown"><a id="nav_about" href="{{url_for('about.stats')}}"><span class="glyphicon glyphicon-info-sign"></span> {{_('About')}}</a></li>
                     {% endif %}
@@ -167,6 +152,18 @@
                 <div class="lib-name">{{ g.current_library.name }}</div>
                 {% if g.current_library.description %}
                 <div class="lib-desc">{{ g.current_library.description }}</div>
+                {% endif %}
+                {% if g.libraries|length > 1 %}
+                <form class="navbar-form" id="lib_select_form" action="{{url_for('basic.select_library')}}" method="POST">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  <input type="hidden" name="lib_slug" id="lib_slug_holder" value="{{ g.current_library_slug or '' }}"/>
+                  <select id="lib_select" name="lib_slug_display" class="form-control input-sm"
+                          onchange="document.getElementById('lib_slug_holder').value=this.value;document.getElementById('lib_select_form').submit();">
+                    {% for lib in g.libraries %}
+                      <option value="{{ lib.slug }}" {% if lib.slug == g.current_library_slug %}selected{% endif %}>{{ lib.name }}</option>
+                    {% endfor %}
+                  </select>
+                </form>
                 {% endif %}
               </li>
               {% endif %}

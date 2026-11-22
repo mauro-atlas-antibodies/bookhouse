@@ -786,3 +786,44 @@ body h3 {
   padding: 8px 12px 2px;
   color: #8a8a8a;
 }
+
+/* Bookhouse: color scheme selector in navbar (next to user, before Tasks) */
+.navbar-nav > li.bh-scheme-nav,
+.navbar-nav > li.bh-scheme-nav * {
+  vertical-align: middle;
+}
+.navbar-nav > li.bh-scheme-nav {
+  display: inline-block;
+  padding: 12px 8px 6px;
+}
+.navbar-right li.bh-scheme-nav {
+  float: left;
+  padding-top: 12px;
+  padding-bottom: 6px;
+}
+.navbar-nav > li.bh-scheme-nav .bh-scheme-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  opacity: 0.75;
+}
+
+/* Bookhouse: library switcher inline with lib title/description block */
+li.lib-info {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0;
+}
+li.lib-info .lib-name,
+li.lib-info .lib-desc {
+  display: block;
+}
+li.lib-info form.navbar-form {
+  margin: 0;
+  padding: 0 15px;   /* same padding as the search input */
+}
+li.lib-info form.navbar-form select {
+  vertical-align: middle;
+}

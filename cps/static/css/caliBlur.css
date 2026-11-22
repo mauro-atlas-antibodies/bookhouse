@@ -8086,3 +8086,21 @@ div.comments[data-readmore] {
 }
 /* restore compact wordmark in navbar */
 .navbar-brand .bookhouse-brand { font-size: 40px; font-weight: bold; }
+
+/* Bookhouse: color scheme selector in navbar */
+.navbar-right li.bh-scheme-nav {
+  display: inline-block;
+  padding-top: 6px;
+  float: left;
+}
+.navbar-nav > li.bh-scheme-nav .bh-scheme-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  opacity: 0.75;
+}
+li.lib-info form.navbar-form {
+  margin: 0;
+  padding: 0 15px;
+}
