@@ -17,9 +17,9 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='bookhouse_favicon.ico', v=4) }}">
     <link href="{{ url_for('static', filename='css/libs/bootstrap.min.css') }}" rel="stylesheet" media="screen">
     {% block header %}{% endblock %}
-    <link href="{{ url_for('static', filename='css/style.css', v=14) }}" rel="stylesheet" media="screen">
+    <link href="{{ url_for('static', filename='css/style.css', v=16) }}" rel="stylesheet" media="screen">
     <link href="{{ url_for('static', filename='css/upload.css') }}" rel="stylesheet" media="screen">
-    <link href="{{ url_for('static', filename='css/caliBlur.css', v=14) }}" rel="stylesheet" media="screen">
+    <link href="{{ url_for('static', filename='css/caliBlur.css', v=16) }}" rel="stylesheet" media="screen">
     <link href="{{ url_for('static', filename='css/caliBlur_override.css') }}" rel="stylesheet" media="screen">
   </head>
   <body class="{{ page }} {{ bodyClass }} {{ g.color_scheme_class }} blur{% if page == 'stat' %} stats{% endif %}{% if page in ['config', 'uiconfig', 'newuser', 'edituser', 'mailset', 'usertable', 'dbconfig'] %} admin{% endif %}{% if page == 'advsearch' %} advanced_search{% endif %}" data-readmore-more="{{_('Read more')}}" data-readmore-less="{{_('Read less')}}">
@@ -57,16 +57,6 @@
           {% endif %}
           <ul class="nav navbar-nav navbar-right" id="main-nav">
             {% if current_user.is_authenticated or g.allow_anonymous %}
-              <li class="bh-scheme-nav">
-                <span class="bh-scheme-label hidden-sm">{{_('Color Scheme')}}</label>
-                <select id="bh_scheme" class="form-control input-sm"
-                        onchange="fetch('{{ url_for('web.set_color_scheme') }}', {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token() }}'}, body: JSON.stringify({scheme: this.value})}).then(()=>location.reload());">
-                  <option value="">{{_('Default')}}</option>
-                  <option value="great_northern" {% if g.color_scheme == 'great_northern' %}selected{% endif %}>{{_('Great Northern')}}</option>
-                  <option value="red_room" {% if g.color_scheme == 'red_room' %}selected{% endif %}>{{_('Red Room')}}</option>
-                  <option value="ghostwood" {% if g.color_scheme == 'ghostwood' %}selected{% endif %}>{{_('Ghostwood Day')}}</option>
-                </select>
-              </li>
               <li class="dropdown"><a href="#" class="dropdown-toggle profileDrop send-btn-tooltip dropdown" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" data-toggle-two="tooltip" title="{{_('Account')}}" data-placement="bottom" data-viewport="#main-nav"><span class="profileDropIcon" aria-hidden="true"><img src="{{ url_for('static', filename='css/img/user-icon.svg') }}" alt=""></span></a><span class="hidden-sm">{{current_user.name}}</span>
                 <ul class="dropdown-menu profileDropli">
                     <li><a id="top_user" href="{{url_for('web.profile')}}" ><span class="glyphicon glyphicon-user"></span> <span class="hidden-sm">{{current_user.name}}</span></a></li>
@@ -149,10 +139,12 @@
               <li><a href="{{url_for('search.advanced_search')}}" id="advanced_search"><span class="glyphicon glyphicon-search"></span><span class="hidden-sm"> {{_('Advanced Search')}}</span></a></li>
               {% if g.current_library %}
               <li class="lib-info">
-                <div class="lib-name">{{ g.current_library.name }}</div>
-                {% if g.current_library.description %}
-                <div class="lib-desc">{{ g.current_library.description }}</div>
-                {% endif %}
+                <div class="lib-text">
+                  <div class="lib-name">{{ g.current_library.name }}</div>
+                  {% if g.current_library.description %}
+                  <div class="lib-desc">{{ g.current_library.description }}</div>
+                  {% endif %}
+                </div>
                 {% if g.libraries|length > 1 %}
                 <form class="navbar-form" id="lib_select_form" action="{{url_for('basic.select_library')}}" method="POST">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>

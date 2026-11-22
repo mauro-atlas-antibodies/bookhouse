@@ -827,3 +827,98 @@ li.lib-info form.navbar-form {
 li.lib-info form.navbar-form select {
   vertical-align: middle;
 }
+
+/* Bookhouse: lib title/description stacked (desc bold below name) */
+li.lib-info .lib-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+li.lib-info .lib-text .lib-desc,
+li.lib-info .lib-desc {
+  font-weight: bold;
+  font-size: 13px;
+  margin-top: 2px;
+}
+li.lib-info form.navbar-form {
+  margin-left: auto;
+}
+.bookhouse-color-profile select {
+  max-width: 320px;
+  display: block;
+}
+
+/* Bookhouse palette round 3 ------------------------------------------------ */
+
+/* Great Northern: toolbar filter/sort buttons readability (Read/Unread pages) */
+body.bh-scheme-great_northern .btn {
+  color: #f4efe4;
+  background-color: #3d2f21;
+  border-color: #59462f;
+}
+body.bh-scheme-great_northern .btn:hover,
+body.bh-scheme-great_northern .btn:focus,
+body.bh-scheme-great_northern .btn:active {
+  color: #ffcf6e;
+  background-color: #4a3a29;
+  border-color: #d9a441;
+}
+body.bh-scheme-great_northern .btn .glyphicon,
+body.bh-scheme-great_northern .btn .caret {
+  color: #ffcf6e;
+}
+/* sidebar green extends the full page height */
+body.bh-scheme-great_northern .col-sm-2 {
+  min-height: calc(100vh - 40px);
+}
+
+/* Red Room: readable tables (clear rows + dark text), book titles visible */
+body.bh-scheme-red_room #books-table,
+body.bh-scheme-red_room .table {
+  background-color: #e9e2d8;
+  color: #241f19;
+}
+body.bh-scheme-red_room .table th,
+body.bh-scheme-red_room .table thead th {
+  background-color: #1c1613;
+  color: #e8ddd0;
+}
+body.bh-scheme-red_room .table th a,
+body.bh-scheme-red_room .table thead th a {
+  color: #e8ddd0;
+}
+body.bh-scheme-red_room .table tbody tr {
+  background-color: #e9e2d8;
+  color: #241f19;
+}
+body.bh-scheme-red_room .table tbody tr:nth-of-type(odd) {
+  background-color: #d9d0c2;
+}
+body.bh-scheme-red_room .table tbody tr td,
+body.bh-scheme-red_room .table tbody tr td a {
+  color: #241f19;
+}
+body.bh-scheme-red_room .table tbody tr:hover td {
+  background-color: #cfc4b2;
+  color: #14231a;
+}
+body.bh-scheme-red_room .book-title,
+body.bh-scheme-red_room .book .title,
+body.bh-scheme-red_room h2.title {
+  color: #e8ddd0;
+}
+body.bh-scheme-red_room a { color: #d9a441; }
+body.bh-scheme-red_room a:hover { color: #ffb85c; }
+/* inputs: light salmon, not pure white */
+body.bh-scheme-red_room input.form-control,
+body.bh-scheme-red_room textarea.form-control,
+body.bh-scheme-red_room select.form-control,
+body.bh-scheme-red_room input {
+  background-color: #f6e3d7;
+  color: #241f19;
+  border-color: #8c7a6b;
+}
+body.bh-scheme-red_room input::placeholder,
+body.bh-scheme-red_room textarea::placeholder {
+  color: #7a6a5d;
+}
