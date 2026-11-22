@@ -1003,6 +1003,9 @@ _EXPORT_BATCH_LIMIT = 2 ** 31 - 1
 @user_login_required
 def export_books():
     calibre_db = get_current_library_db()
+    fmt = request.args.get("format", "csv")
+    if fmt not in ('csv', 'json'):
+        fmt = 'csv'
     search_param = request.args.get("search")
     sort_param = request.args.get("sort", "id")
     order = request.args.get("order", "asc")
@@ -1010,45 +1013,50 @@ def export_books():
     order, join, state = _book_list_order(sort_param, order)
     result, __, __ = _book_list_entries(calibre_db, search_param, order, state, join, 0, _EXPORT_BATCH_LIMIT)
 
-    si = io.StringIO()
-    writer = csv.writer(si, delimiter=';')
-    writer.writerow([_(BOOK_LIST_FIELD_LABELS.get(c, c)) for c in columns])
+    def export_cell(val, c):
+        if c == 'is_archived':
+            return _('Yes') if val.is_archived else _('No')
+        if c == 'read_status':
+            return _('Yes') if val.read_status else _('No')
+        if c == 'authors':
+            return ', '.join(a.name for a in val.authors)
+        if c == 'tags':
+            return ', '.join(t.name for t in val.tags)
+        if c == 'languages':
+            return ', '.join(l.language_name for l in val.languages)
+        if c == 'publishers':
+            return ', '.join(p.name for p in val.publishers)
+        if c == 'series':
+            return val.series[0].name if val.series else ''
+        if c == 'series_index':
+            return ('%.2f' % val.series_index).rstrip('0').rstrip('.') if val.series_index else ''
+        if c == 'comments':
+            return re.sub(r'<[^>]+>', '', val.comments or '').strip()
+        if c == 'timestamp':
+            return val.timestamp.strftime('%Y-%m-%d %H:%M:%S') if val.timestamp else ''
+        if c == 'id':
+            return val.id
+        return getattr(val, c, '') or ''
 
-    for val in result:
-        row = list()
-        for c in columns:
-            if c == 'is_archived':
-                cell = _('Yes') if val.is_archived else _('No')
-            elif c == 'read_status':
-                cell = _('Yes') if val.read_status else _('No')
-            elif c == 'authors':
-                cell = ', '.join(a.name for a in val.authors)
-            elif c == 'tags':
-                cell = ', '.join(t.name for t in val.tags)
-            elif c == 'languages':
-                cell = ', '.join(l.language_name for l in val.languages)
-            elif c == 'publishers':
-                cell = ', '.join(p.name for p in val.publishers)
-            elif c == 'series':
-                cell = val.series[0].name if val.series else ''
-            elif c == 'series_index':
-                cell = ('%.2f' % val.series_index).rstrip('0').rstrip('.') if val.series_index else ''
-            elif c == 'comments':
-                cell = re.sub(r'<[^>]+>', '', val.comments or '').strip()
-            elif c == 'timestamp':
-                cell = val.timestamp.strftime('%Y-%m-%d %H:%M') if val.timestamp else ''
-            elif c == 'id':
-                cell = val.id
-            else:
-                cell = getattr(val, c, '') or ''
-            row.append(cell)
-        writer.writerow(row)
-
-    response = make_response('\ufeff' + si.getvalue())
-    response.headers["Content-Type"] = "text/csv; charset=utf-8"
-    response.headers["Content-Disposition"] = 'attachment; filename="bookhouse_books_export_%s.csv"' % \
-        datetime.datetime.now().strftime('%Y%m%d')
+    headers = [_(BOOK_LIST_FIELD_LABELS.get(c, c)) for c in columns]
+    extension = fmt
+    if fmt == 'json':
+        rows = [dict(zip(headers, (export_cell(val, c) for c in columns))) for val in result]
+        payload = json.dumps(rows, indent=2, ensure_ascii=False, default=str)
+        response = make_response(payload)
+        response.headers["Content-Type"] = "application/json; charset=utf-8"
+    else:
+        si = io.StringIO()
+        writer = csv.writer(si, delimiter=';')
+        writer.writerow(headers)
+        for val in result:
+            writer.writerow([export_cell(val, c) for c in columns])
+        response = make_response('\ufeff' + si.getvalue())
+        response.headers["Content-Type"] = "text/csv; charset=utf-8"
+    response.headers["Content-Disposition"] = 'attachment; filename="bookhouse_books_export_%s.%s"' % (
+        datetime.datetime.now().strftime('%Y%m%d-%H%M%S'), extension)
     return response
+
 
 
 @web.route("/ajax/table_settings", methods=['POST'])

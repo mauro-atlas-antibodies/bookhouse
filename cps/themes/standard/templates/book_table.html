@@ -38,8 +38,13 @@
           <div class="btn btn-default" id="export_books_list">
             <span class="glyphicon glyphicon-download"></span> {{_('Export books list')}}
           </div>
+          <div class="btn btn-default" id="export_books_list_json">
+            <span class="glyphicon glyphicon-download"></span> {{_('Export as JSON')}}
+          </div>
         </div>
       </div>
+     <div class="filterheader col-xs-12 col-sm-6">
+    </div>
     <table id="books-table" class="table table-no-bordered table-striped"
            data-url="{{url_for('web.list_books')}}" data-locale="{{ current_user.locale }}">
       <thead>
@@ -293,5 +298,5 @@
 <script src="{{ url_for('static', filename='js/libs/wysihtml5-0.3.0.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/libs/bootstrap-wysihtml5-0.0.3.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/libs/wysihtml5-0.0.3.js') }}"></script>
-<script src="{{ url_for('static', filename='js/table.js') }}"></script>
+<script src="{{ url_for('static', filename='js/table.js', v=2) }}"></script>
 {% endblock %}
