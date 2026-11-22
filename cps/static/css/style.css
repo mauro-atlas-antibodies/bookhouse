@@ -922,3 +922,50 @@ body.bh-scheme-red_room input::placeholder,
 body.bh-scheme-red_room textarea::placeholder {
   color: #7a6a5d;
 }
+
+/* Bookhouse palette round 4 ------------------------------------------------ */
+
+/* a. Red Room: column-picker / toolbar dropdown menus -> grey bg, readable */
+body.bh-scheme-red_room .fixed-table-toolbar .dropdown-menu,
+body.bh-scheme-red_room .bootstrap-table .dropdown-menu {
+  background-color: #6f6f6f;
+  border-color: #494949;
+}
+body.bh-scheme-red_room .fixed-table-toolbar .dropdown-menu > li > a,
+body.bh-scheme-red_room .fixed-table-toolbar .dropdown-menu label,
+body.bh-scheme-red_room .bootstrap-table .dropdown-menu > li > a {
+  color: #fdfdfd;
+}
+body.bh-scheme-red_room .fixed-table-toolbar .dropdown-menu > li > a:hover,
+body.bh-scheme-red_room .fixed-table-toolbar .dropdown-menu > li > a:focus {
+  background-color: #5a5a5a;
+  color: #ffffff;
+}
+
+/* b. Great Northern: full-height green is a HOME-only affordance; other
+      pages get the neutral sidebar so author/series/tags lists render clean */
+body.bh-scheme-great_northern .col-sm-2 {
+  min-height: 0;
+  background-color: transparent;
+}
+body.bh-scheme-great_northern.newest .col-sm-2 {
+  background-color: #1e3a27;
+  min-height: calc(100vh - 40px);
+}
+/* CBD: author/series/tags list entries — kill inherited huge heights */
+body.bh-scheme-great_northern .discover .entry,
+body.bh-scheme-great_northern .discover .author {
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+/* c. Ghostwood: light text on the green buttons (hover unchanged) */
+body.bh-scheme-ghostwood .btn {
+  background-color: #4f8763;
+  color: #f6f9f4;
+  border-color: #3d6b4f;
+}
+body.bh-scheme-ghostwood .btn .glyphicon,
+body.bh-scheme-ghostwood .btn .caret {
+  color: #f6f9f4;
+}
