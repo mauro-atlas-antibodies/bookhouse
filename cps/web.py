@@ -19,7 +19,11 @@
 #  along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import csv
+import io
 import json
+import re
+import datetime
 import mimetypes
 import chardet  # dependency of requests
 import copy
@@ -879,18 +883,11 @@ def books_table():
                                  visiblility=visibility)
 
 
-@web.route("/ajax/listbooks")
-@user_login_required
-def list_books():
-    calibre_db = get_current_library_db()
-    off = int(request.args.get("offset") or 0)
-    limit = int(request.args.get("limit") or config.config_books_per_page)
-    search_param = request.args.get("search")
-    sort_param = request.args.get("sort", "id")
-    order = request.args.get("order", "").lower()
+def _book_list_order(sort_param, order):
+    """Shared sort/join computation for the Book List table + CSV export."""
     state = None
     join = tuple()
-    if not order in ["asc", "desc", ""]:
+    if order not in ["asc", "desc", ""]:
         order = "asc"
     if sort_param == "state":
         state = json.loads(request.args.get("state", "[]"))
@@ -915,7 +912,11 @@ def list_books():
         order = [text(sort_param + " " + order)]
     elif not state:
         order = [db.Books.timestamp.desc()]
+    return order, join, state
 
+
+def _book_list_entries(calibre_db, search_param, order, state, join, off, limit):
+    """Shared row fetching for the Book List table + CSV export."""
     total_count = filtered_count = calibre_db.session.query(db.Books).filter(
         calibre_db.common_filters(allow_show_archived=True)).count()
     if state is not None:
@@ -953,12 +954,100 @@ def list_books():
             val.languages[lang_index].language_name = isoLanguages.get_language_name(get_locale(), val.languages[
                 lang_index].lang_code)
         result.append(val)
+    return result, filtered_count, total_count
+
+
+@web.route("/ajax/listbooks")
+@user_login_required
+def list_books():
+    calibre_db = get_current_library_db()
+    off = int(request.args.get("offset") or 0)
+    limit = int(request.args.get("limit") or config.config_books_per_page)
+    search_param = request.args.get("search")
+    sort_param = request.args.get("sort", "id")
+    order = request.args.get("order", "").lower()
+    order, join, state = _book_list_order(sort_param, order)
+    result, filtered_count, total_count = _book_list_entries(calibre_db, search_param, order, state, join, off, limit)
 
     table_entries = {'totalNotFiltered': total_count, 'total': filtered_count, "rows": result}
     js_list = json.dumps(table_entries, cls=db.AlchemyEncoder)
 
     response = make_response(js_list)
     response.headers["Content-Type"] = "application/json; charset=utf-8"
+    return response
+
+
+# Bookhouse: CSV export of the Book List (search filter, sort and visible
+# columns of the table are honored; separator is ';')
+BOOK_LIST_FIELD_LABELS = {
+    'id': 'Id',
+    'title': 'Title',
+    'sort': 'Title Sort',
+    'author_sort': 'Author Sort',
+    'authors': 'Authors',
+    'tags': 'Categories',
+    'series': 'Series',
+    'series_index': 'Series Index',
+    'languages': 'Languages',
+    'publishers': 'Publishers',
+    'comments': 'Comments',
+    'is_archived': 'Archive Status',
+    'read_status': 'Read Status',
+    'timestamp': 'Timestamp',
+}
+
+_EXPORT_BATCH_LIMIT = 2 ** 31 - 1
+
+
+@web.route("/books/export", methods=['GET'])
+@user_login_required
+def export_books():
+    calibre_db = get_current_library_db()
+    search_param = request.args.get("search")
+    sort_param = request.args.get("sort", "id")
+    order = request.args.get("order", "asc")
+    columns = [c for c in (request.args.get("columns") or "title,authors").split(',') if c]
+    order, join, state = _book_list_order(sort_param, order)
+    result, __, __ = _book_list_entries(calibre_db, search_param, order, state, join, 0, _EXPORT_BATCH_LIMIT)
+
+    si = io.StringIO()
+    writer = csv.writer(si, delimiter=';')
+    writer.writerow([_(BOOK_LIST_FIELD_LABELS.get(c, c)) for c in columns])
+
+    for val in result:
+        row = list()
+        for c in columns:
+            if c == 'is_archived':
+                cell = _('Yes') if val.is_archived else _('No')
+            elif c == 'read_status':
+                cell = _('Yes') if val.read_status else _('No')
+            elif c == 'authors':
+                cell = ', '.join(a.name for a in val.authors)
+            elif c == 'tags':
+                cell = ', '.join(t.name for t in val.tags)
+            elif c == 'languages':
+                cell = ', '.join(l.language_name for l in val.languages)
+            elif c == 'publishers':
+                cell = ', '.join(p.name for p in val.publishers)
+            elif c == 'series':
+                cell = val.series[0].name if val.series else ''
+            elif c == 'series_index':
+                cell = ('%.2f' % val.series_index).rstrip('0').rstrip('.') if val.series_index else ''
+            elif c == 'comments':
+                cell = re.sub(r'<[^>]+>', '', val.comments or '').strip()
+            elif c == 'timestamp':
+                cell = val.timestamp.strftime('%Y-%m-%d %H:%M') if val.timestamp else ''
+            elif c == 'id':
+                cell = val.id
+            else:
+                cell = getattr(val, c, '') or ''
+            row.append(cell)
+        writer.writerow(row)
+
+    response = make_response('\ufeff' + si.getvalue())
+    response.headers["Content-Type"] = "text/csv; charset=utf-8"
+    response.headers["Content-Disposition"] = 'attachment; filename="bookhouse_books_export_%s.csv"' % \
+        datetime.datetime.now().strftime('%Y%m%d')
     return response
 
 

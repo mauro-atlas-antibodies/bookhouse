@@ -434,6 +434,19 @@ $(function() {
         });
     });*/
 
+    $("#export_books_list").click(function () {
+        var options = $("#books-table").bootstrapTable('getOptions');
+        var visible = $("#books-table").bootstrapTable('getVisibleColumns')
+            .map(function (a) { return a.field; })
+            .filter(function (f) { return f && f !== 'state'; });
+        var params = new URLSearchParams();
+        if (options.searchText) params.append('search', options.searchText);
+        if (options.sortName) params.append('sort', options.sortName);
+        if (options.sortOrder) params.append('order', options.sortOrder);
+        params.append('columns', visible.join(','));
+        window.location = getPath() + "/books/export?" + params.toString();
+    });
+
     $("#table_xchange").click(function() {
         $.ajax({
             method:"post",
