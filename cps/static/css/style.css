@@ -942,13 +942,13 @@ body.bh-scheme-red_room .fixed-table-toolbar .dropdown-menu > li > a:focus {
   color: #ffffff;
 }
 
-/* b. Great Northern: full-height green is a HOME-only affordance; other
-      pages get the neutral sidebar so author/series/tags lists render clean */
+/* b. Great Northern: full-height green applies ONLY to the sidebar nav
+   (nav.navigation) — not to any other .col-sm-2 (covers, entry grids) */
 body.bh-scheme-great_northern .col-sm-2 {
   min-height: 0;
   background-color: transparent;
 }
-body.bh-scheme-great_northern.newest .col-sm-2 {
+body.bh-scheme-great_northern nav.navigation {
   background-color: #1e3a27;
   min-height: calc(100vh - 40px);
 }
