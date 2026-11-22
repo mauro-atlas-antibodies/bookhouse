@@ -17,9 +17,9 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='bookhouse_favicon.ico', v=4) }}">
     <link href="{{ url_for('static', filename='css/libs/bootstrap.min.css') }}" rel="stylesheet" media="screen">
     {% block header %}{% endblock %}
-    <link href="{{ url_for('static', filename='css/style.css', v=12) }}" rel="stylesheet" media="screen">
+    <link href="{{ url_for('static', filename='css/style.css', v=13) }}" rel="stylesheet" media="screen">
     <link href="{{ url_for('static', filename='css/upload.css') }}" rel="stylesheet" media="screen">
-    <link href="{{ url_for('static', filename='css/caliBlur.css', v=12) }}" rel="stylesheet" media="screen">
+    <link href="{{ url_for('static', filename='css/caliBlur.css', v=13) }}" rel="stylesheet" media="screen">
     <link href="{{ url_for('static', filename='css/caliBlur_override.css') }}" rel="stylesheet" media="screen">
   </head>
   <body class="{{ page }} {{ bodyClass }} {{ g.color_scheme_class }} blur{% if page == 'stat' %} stats{% endif %}{% if page in ['config', 'uiconfig', 'newuser', 'edituser', 'mailset', 'usertable', 'dbconfig'] %} admin{% endif %}{% if page == 'advsearch' %} advanced_search{% endif %}" data-readmore-more="{{_('Read more')}}" data-readmore-less="{{_('Read less')}}">
@@ -75,6 +75,16 @@
               <li class="dropdown"><a href="#" class="dropdown-toggle profileDrop send-btn-tooltip dropdown" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" data-toggle-two="tooltip" title="{{_('Account')}}" data-placement="bottom" data-viewport="#main-nav"><span class="profileDropIcon" aria-hidden="true"><img src="{{ url_for('static', filename='css/img/user-icon.svg') }}" alt=""></span></a><span class="hidden-sm">{{current_user.name}}</span>
                 <ul class="dropdown-menu profileDropli">
                     <li><a id="top_user" href="{{url_for('web.profile')}}" ><span class="glyphicon glyphicon-user"></span> <span class="hidden-sm">{{current_user.name}}</span></a></li>
+                    <li class="dropdown-header bh-scheme-header">{{_('Color Scheme')}}</li>
+                    <li class="bh-scheme-select">
+                      <select id="bh_scheme" class="form-control input-sm"
+                              onchange="fetch('{{ url_for('web.set_color_scheme') }}', {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token() }}'}, body: JSON.stringify({scheme: this.value})}).then(()=>location.reload());">
+                        <option value="">{{_('Default')}}</option>
+                        <option value="great_northern" {% if g.color_scheme == 'great_northern' %}selected{% endif %}>{{_('Great Northern')}}</option>
+                        <option value="red_room" {% if g.color_scheme == 'red_room' %}selected{% endif %}>{{_('Red Room')}}</option>
+                        <option value="ghostwood" {% if g.color_scheme == 'ghostwood' %}selected{% endif %}>{{_('Ghostwood Day')}}</option>
+                      </select>
+                    </li>
                     {% if not current_user.is_anonymous %}
                     <li class="dropdown"><a id="nav_about" href="{{url_for('about.stats')}}"><span class="glyphicon glyphicon-info-sign"></span> {{_('About')}}</a></li>
                     {% endif %}
@@ -148,18 +158,6 @@
             <img src="{{ url_for('static', filename='bookhouse_logo_circle.png') }}" alt="{{instance}}"
                  class="bookhouse-side-logo" style="width:180px;max-width:180px;height:auto;display:block;">
           </a>
-          {% if current_user.is_authenticated and not current_user.is_anonymous %}
-          <div class="bookhouse-color-scheme">
-            <label for="bh_scheme" class="sr-only">{{_('Color Scheme')}}</label>
-            <select id="bh_scheme" class="form-control input-sm"
-                    onchange="fetch('{{ url_for('web.set_color_scheme') }}', {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token() }}'}, body: JSON.stringify({scheme: this.value})}).then(()=>location.reload());">
-              <option value="">{{_('Default')}}</option>
-              <option value="great_northern" {% if g.color_scheme == 'great_northern' %}selected{% endif %}>{{_('Great Northern')}}</option>
-              <option value="red_room" {% if g.color_scheme == 'red_room' %}selected{% endif %}>{{_('Red Room')}}</option>
-              <option value="ghostwood" {% if g.color_scheme == 'ghostwood' %}selected{% endif %}>{{_('Ghostwood Day')}}</option>
-            </select>
-          </div>
-          {% endif %}
           <nav class="navigation">
             <ul class="list-unstyled" id="scnd-nav" intent in-standard-append="nav.navigation" in-tablet-after="#main-nav" in-tablet-class="nav navbar-nav" in-mobile-after="#main-nav" in-mobile-class="nav navbar-nav">
               <li class="nav-head hidden-xs">{{_('Browse')}}</li>

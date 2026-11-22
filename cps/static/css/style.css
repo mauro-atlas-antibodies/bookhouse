@@ -769,3 +769,20 @@ body h3 {
 .container-fluid .new-books h2 {
   margin: 30px 0 18px;
 }
+
+/* Bookhouse: color scheme selector inside user profile dropdown */
+.dropdown-menu li.bh-scheme-select {
+  padding: 4px 12px 8px;
+  min-width: 190px;
+}
+.dropdown-menu li.bh-scheme-select select {
+  width: 100%;
+}
+.dropdown-menu li.bh-scheme-header {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 8px 12px 2px;
+  color: #8a8a8a;
+}
