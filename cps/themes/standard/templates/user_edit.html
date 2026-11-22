@@ -2,6 +2,19 @@
 {% block body %}
 <div class="discover">
   <h2>{{title}}</h2>
+  {% if profile %}
+  <div class="form-group bookhouse-color-profile">
+    <label for="bh_scheme">{{_('Color Scheme')}}</label>
+    <select id="bh_scheme" name="bh_scheme" class="form-control input-sm"
+            onchange="fetch('{{ url_for('web.set_color_scheme') }}', {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token() }}'}, body: JSON.stringify({scheme: this.value})}).then(()=>location.reload());">
+      <option value="">{{_('Default')}}</option>
+      <option value="great_northern" {% if g.color_scheme == 'great_northern' %}selected{% endif %}>{{_('Great Northern')}}</option>
+      <option value="red_room" {% if g.color_scheme == 'red_room' %}selected{% endif %}>{{_('Red Room')}}</option>
+      <option value="ghostwood" {% if g.color_scheme == 'ghostwood' %}selected{% endif %}>{{_('Ghostwood Day')}}</option>
+    </select>
+    <p class="text-muted">{{_('Applies immediately, saved to your profile.')}}</p>
+  </div>
+  {% endif %}
   <form role="form" method="POST" autocomplete="off">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="col-md-10 col-lg-8">
@@ -141,7 +154,11 @@
     {% if not content.role_anonymous() %}
     <div class="form-group">
       <label>{{_('Library Access')}}</label>
+      {% if profile %}
+      <p class="text-muted">{{_('These libraries have been assigned to you by an administrator. To change your access, contact them.')}}</p>
+      {% else %}
       <p class="text-muted">{{_('No selection grants access to the Main library only. Admin users always see all libraries.')}}</p>
+      {% endif %}
       {% for lib in libraries %}
       <div class="checkbox">
         <label>
