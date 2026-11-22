@@ -42,3 +42,6 @@ gmail.json
 library/
 library-2/
 library-3/
+
+test_*.py
+.DS_Store
