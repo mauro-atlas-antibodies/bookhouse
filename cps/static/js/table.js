@@ -489,7 +489,7 @@ $(function() {
 
     $("#books-table").bootstrapTable({
         sidePagination: "server",
-        pageList: "[10, 25, 50, 100]",
+        pageList: "[10, 25, 50, 100, 200, 300]",
         queryParams: queryParams,
         pagination: true,
         paginationLoop: false,
