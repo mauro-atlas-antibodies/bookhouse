@@ -78,15 +78,6 @@
                 <!--{{ text_table_row('custom_column_' + c.id|string, _('Enter ') + c.name, c.name, false, false) }} -->
               {% endif %}
             {% endfor %}
-          {% if current_user.role_delete_books() and current_user.role_edit()%}
-            <th data-align="right" data-formatter="EbookActions" data-switchable="false">
-                <div><div class="btn btn-default button_head disabled" aria-disabled="true">
-                    {{_('Delete selected books')}}
-                </div></div>
-                <br>
-                {{_('Delete')}}
-            </th>
-          {% endif %}
         </tr>
       </thead>
     </table>
@@ -94,8 +85,6 @@
 
 {% endblock %}
 {% block modal %}
-{{ delete_book(current_user.role_delete_books()) }}
-{{ delete_confirm_modal() }}
 {{ change_confirm_modal() }}
 {% if current_user.role_edit() %}
 <div class="modal fade" id="mergeModal" role="dialog" aria-labelledby="metaMergeLabel">
@@ -121,26 +110,6 @@
     </div>
   </div>
 </div>
-
-<!--div class="modal fade" id="delete_selected_modal" role="dialog" aria-labelledby="metaDeleteSelectedLabel">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header bg-danger text-center">
-          <span>{{_('Are you really sure?')}}</span>
-      </div>
-      <div class="modal-body">
-        <p></p>
-            <div class="text-left">{{_('The following books will be deleted:')}}</div>
-        <p></p>
-            <div class="text-left" id="display-delete-selected-books"></div>
-      <div class="modal-footer">
-        <input id="delete_selected_confirm" type="button" class="btn btn-danger" value="{{_('Delete')}}" name="delete_selected_confirm" data-dismiss="modal">
-        <button id="delete_selected_abort" type="button" class="btn btn-default" data-dismiss="modal">{{_('Cancel')}}</button>
-      </div>
-      </div>
-    </div>
-  </div>
-</div-->
 
 <div class="modal fade" id="archive_selected_modal" role="dialog" aria-labelledby="metaArchiveSelectedLabel">
   <div class="modal-dialog">

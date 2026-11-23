@@ -65,6 +65,26 @@
 {% endif %}
 <div class="discover load-more">
   <h2 class="{{title}}">{{title}}</h2>
+  {% if page == 'search' %}
+  <div class="row form-group">
+    <div class="btn btn-default" onclick="location='{{ url_for('web.export_books', columns='title,authors,tags,publishers') }}&search={{ request.args.get('query', '') | urlencode }}'">
+      <span class="glyphicon glyphicon-download"></span> {{_('Export results (CSV)')}}
+    </div>
+    <div class="btn btn-default" onclick="location='{{ url_for('web.export_books', columns='title,authors,tags,publishers', format='json') }}&search={{ request.args.get('query', '') | urlencode }}'">
+      <span class="glyphicon glyphicon-download"></span> {{_('Export results (JSON)')}}
+    </div>
+  </div>
+  {% endif %}
+  {% if page == 'advsearch' %}
+  <div class="row form-group">
+    <div class="btn btn-default" onclick="location='{{ url_for('web.export_books', columns='title,authors,tags,publishers', adv=1) }}'">
+      <span class="glyphicon glyphicon-download"></span> {{_('Export results (CSV)')}}
+    </div>
+    <div class="btn btn-default" onclick="location='{{ url_for('web.export_books', columns='title,authors,tags,publishers', format='json', adv=1) }}'">
+      <span class="glyphicon glyphicon-download"></span> {{_('Export results (JSON)')}}
+    </div>
+  </div>
+  {% endif %}
    {% if page != 'discover' %}
     <div class="filterheader hidden-xs">
     {% if page == 'hot' %}

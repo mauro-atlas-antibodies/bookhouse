@@ -229,19 +229,23 @@ def extend_search_term(searchterm,
                                            format='medium')])
         except ValueError:
             pub_end = ""
-    elements = {'tag': db.Tags, 'serie':db.Series, 'shelf':ub.Shelf}
+    elements = {'tag': db.Tags, 'serie': db.Series, 'shelf': ub.Shelf}
     for key, db_element in elements.items():
-        tag_names = calibre_db.session.query(db_element).filter(db_element.id.in_(tags['include_' + key])).all()
-        searchterm.extend(tag.name for tag in tag_names)
-        tag_names = calibre_db.session.query(db_element).filter(db_element.id.in_(tags['exclude_' + key])).all()
-        searchterm.extend(tag.name for tag in tag_names)
+        include_ids = tags.get('include_' + key) or []
+        exclude_ids = tags.get('exclude_' + key) or []
+        if include_ids:
+            tag_names = calibre_db.session.query(db_element).filter(db_element.id.in_(include_ids)).all()
+            searchterm.extend(tag.name for tag in tag_names)
+        if exclude_ids:
+            tag_names = calibre_db.session.query(db_element).filter(db_element.id.in_(exclude_ids)).all()
+            searchterm.extend(tag.name for tag in tag_names)
     language_names = calibre_db.session.query(db.Languages). \
-        filter(db.Languages.id.in_(tags['include_language'])).all()
+        filter(db.Languages.id.in_(tags.get('include_language') or [])).all()
     if language_names:
         language_names = calibre_db.speaking_language(language_names)
     searchterm.extend(language.name for language in language_names)
     language_names = calibre_db.session.query(db.Languages). \
-        filter(db.Languages.id.in_(tags['exclude_language'])).all()
+        filter(db.Languages.id.in_(tags.get('exclude_language') or [])).all()
     if language_names:
         language_names = calibre_db.speaking_language(language_names)
     searchterm.extend(language.name for language in language_names)
@@ -251,18 +255,31 @@ def extend_search_term(searchterm,
         searchterm.extend([_("Rating >= %(rating)s", rating=rating_low)])
     if read_status != "Any":
         searchterm.extend([_("Read Status = '%(status)s'", status=read_status)])
-    searchterm.extend(ext for ext in tags['include_extension'])
-    searchterm.extend(ext for ext in tags['exclude_extension'])
+    searchterm.extend(ext for ext in (tags.get('include_extension') or []))
+    searchterm.extend(ext for ext in (tags.get('exclude_extension') or []))
     # handle custom columns
     searchterm = " + ".join(filter(None, searchterm))
     return searchterm, pub_start, pub_end
 
 
-def render_adv_search_results(term, offset=None, order=None, limit=None):
-    calibre_db = get_current_library_db()
-    sort = order[0] if order else [db.Books.sort]
-    pagination = None
-
+def get_advanced_search_entries(term, calibre_db):
+    """Bookhouse: shared advanced-search filtering — used by the results page
+    and by the Book List CSV/JSON export (source=adv)."""
+    # normalize: callers (and the export path) may omit any key
+    _defaults = {
+        'authors': '', 'title': '', 'publisher': '', 'comments': '',
+        'read_status': 'Any', 'publishstart': '', 'publishend': '',
+        'ratinghigh': '', 'ratinglow': '',
+        'include_tag': [], 'exclude_tag': [],
+        'include_serie': [], 'exclude_serie': [],
+        'include_shelf': [], 'exclude_shelf': [],
+        'include_language': [], 'exclude_language': [],
+        'include_extension': [], 'exclude_extension': [],
+    }
+    merged = dict(_defaults)
+    merged.update(term or {})
+    term = merged
+    sort = [db.Books.sort]
     cc = calibre_db.get_cc_columns(config, filter_config_custom_read=True)
     calibre_db.create_functions()
     query = calibre_db.generate_linked_query(config.config_read_column, db.Books)
@@ -331,9 +348,9 @@ def render_adv_search_results(term, offset=None, order=None, limit=None):
     if any(tags.values()) or author_name or book_title or publisher or pub_start or pub_end or rating_low \
        or rating_high or description or cc_present or read_status != "Any":
         search_term, pub_start, pub_end = extend_search_term(search_term,
-                                                             author_name,
-                                                             book_title,
-                                                             publisher,
+                                                             author_name or "",
+                                                             book_title or "",
+                                                             publisher or "",
                                                              pub_start,
                                                              pub_end,
                                                              tags,
@@ -372,6 +389,15 @@ def render_adv_search_results(term, offset=None, order=None, limit=None):
             flash(_("Error on search for custom columns, please restart Calibre-Web"), category="error")
 
     q = q.order_by(*sort).all()
+    return q, search_term
+
+
+def render_adv_search_results(term, offset=None, order=None, limit=None):
+    calibre_db = get_current_library_db()
+    sort = order[0] if order else [db.Books.sort]
+    pagination = None
+
+    q, search_term = get_advanced_search_entries(term, calibre_db)
     flask_session['query'] = json.dumps(term)
     ub.store_combo_ids(q)
     result_count = len(q)

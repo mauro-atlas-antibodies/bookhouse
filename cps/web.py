@@ -46,6 +46,7 @@ from . import constants, logger, isoLanguages, services, limiter
 from . import db, ub, config, app
 from . import kobo_sync_status
 from . import get_current_library_db, get_current_library_id, get_current_main_library_id
+from .search import get_advanced_search_entries
 from .search import render_search_results, render_adv_search_results
 from .gdriveutils import getFileFromEbooksFolder, do_gdrive_download
 from .helper import check_valid_domain, check_email, check_username, \
@@ -915,8 +916,16 @@ def _book_list_order(sort_param, order):
     return order, join, state
 
 
-def _book_list_entries(calibre_db, search_param, order, state, join, off, limit):
-    """Shared row fetching for the Book List table + CSV export."""
+def _book_list_entries(calibre_db, search_param, order, state, join, off, limit,
+                       tag_filter=None):
+    """Shared row fetching for the Book List table + CSV export.
+
+    tag_filter: optional (tag_ids, mode) tuple. mode 'all' = book must contain
+    ALL given tags; mode 'not' = books NOT containing all given tags.
+    When active the whole match set is fetched then filtered + cut to page.
+    """
+    fetch_all = tag_filter is not None
+    fetch_off, fetch_limit = (0, _EXPORT_BATCH_LIMIT) if fetch_all else (off, limit)
     total_count = filtered_count = calibre_db.session.query(db.Books).filter(
         calibre_db.common_filters(allow_show_archived=True)).count()
     if state is not None:
@@ -926,18 +935,18 @@ def _book_list_entries(calibre_db, search_param, order, state, join, off, limit)
         else:
             query = calibre_db.generate_linked_query(config.config_read_column, db.Books)
             books = query.filter(calibre_db.common_filters(allow_show_archived=True)).all()
-        entries = calibre_db.get_checkbox_sorted(books, state, off, limit, order, True)
+        entries = calibre_db.get_checkbox_sorted(books, state, fetch_off, fetch_limit, order, True)
     elif search_param:
         entries, filtered_count, __ = calibre_db.get_search_results(search_param,
                                                                     config,
-                                                                    off,
+                                                                    fetch_off,
                                                                     [order, ''],
-                                                                    limit,
+                                                                    fetch_limit,
                                                                     *join)
     else:
-        entries, __, __ = calibre_db.fill_indexpage_with_archived_books((int(off) / (int(limit)) + 1),
+        entries, __, __ = calibre_db.fill_indexpage_with_archived_books((int(fetch_off) / (int(fetch_limit)) + 1),
                                                                         db.Books,
-                                                                        limit,
+                                                                        fetch_limit,
                                                                         True,
                                                                         order,
                                                                         True,
@@ -945,15 +954,31 @@ def _book_list_entries(calibre_db, search_param, order, state, join, off, limit)
                                                                         config.config_read_column,
                                                                         *join)
 
-    result = list()
-    for entry in entries:
+    def _decorate(entry):
         val = entry[0]
         val.is_archived = entry[1] is True
         val.read_status = entry[2] == ub.ReadBook.STATUS_FINISHED
         for lang_index in range(0, len(val.languages)):
             val.languages[lang_index].language_name = isoLanguages.get_language_name(get_locale(), val.languages[
                 lang_index].lang_code)
-        result.append(val)
+        return val
+
+    if fetch_all:
+        result = [_decorate(e) for e in entries]
+        tag_ids, tag_mode = tag_filter
+        wanted = set(tag_ids)
+
+        def _keep(v):
+            present = {t.id for t in v.tags}
+            contains_all = wanted.issubset(present)
+            return contains_all if tag_mode == "all" else not contains_all
+
+        result = [v for v in result if _keep(v)]
+        filtered_count = len(result)
+        page_rows = result[off:off + limit]
+        return page_rows, filtered_count, total_count
+
+    result = [_decorate(e) for e in entries]
     return result, filtered_count, total_count
 
 
@@ -967,7 +992,11 @@ def list_books():
     sort_param = request.args.get("sort", "id")
     order = request.args.get("order", "").lower()
     order, join, state = _book_list_order(sort_param, order)
-    result, filtered_count, total_count = _book_list_entries(calibre_db, search_param, order, state, join, off, limit)
+    include_tag = [int(t) for t in request.args.getlist("include_tag") if t.isdigit()]
+    tag_mode = request.args.get("tag_mode", "all")
+    tag_filter = (include_tag, tag_mode) if include_tag else None
+    result, filtered_count, total_count = _book_list_entries(calibre_db, search_param, order, state, join, off, limit,
+                                                             tag_filter=tag_filter)
 
     table_entries = {'totalNotFiltered': total_count, 'total': filtered_count, "rows": result}
     js_list = json.dumps(table_entries, cls=db.AlchemyEncoder)
@@ -999,6 +1028,17 @@ BOOK_LIST_FIELD_LABELS = {
 _EXPORT_BATCH_LIMIT = 2 ** 31 - 1
 
 
+@web.route("/ajax/all_tags")
+@user_login_required
+def all_tags():
+    """Bookhouse: id+name list of all tags in the current library (tag filter UI)."""
+    calibre_db = get_current_library_db()
+    tags = calibre_db.session.query(db.Tags.id, db.Tags.name).order_by(db.Tags.name).all()
+    response = make_response(json.dumps([{"id": t[0], "name": t[1]} for t in tags]))
+    response.headers["Content-Type"] = "application/json; charset=utf-8"
+    return response
+
+
 @web.route("/books/export", methods=['GET'])
 @user_login_required
 def export_books():
@@ -1010,8 +1050,24 @@ def export_books():
     sort_param = request.args.get("sort", "id")
     order = request.args.get("order", "asc")
     columns = [c for c in (request.args.get("columns") or "title,authors").split(',') if c]
-    order, join, state = _book_list_order(sort_param, order)
-    result, __, __ = _book_list_entries(calibre_db, search_param, order, state, join, 0, _EXPORT_BATCH_LIMIT)
+    include_tag = [int(t) for t in request.args.getlist("include_tag") if t.isdigit()]
+    tag_mode = request.args.get("tag_mode", "all")
+    tag_filter = (include_tag, tag_mode) if include_tag else None
+    if request.args.get('adv') == '1':
+        # Bookhouse: export current advanced-search results (filters stored in session)
+        term = json.loads(flask_session.get('query', '{}'))
+        q, __ = get_advanced_search_entries(term, calibre_db)
+        result = list()
+        for row in q:
+            val = row[0] if not isinstance(row, db.Books) else row
+            for lang_index in range(0, len(val.languages)):
+                val.languages[lang_index].language_name = isoLanguages.get_language_name(
+                    get_locale(), val.languages[lang_index].lang_code)
+            result.append(val)
+    else:
+        order, join, state = _book_list_order(sort_param, order)
+        result, __, __ = _book_list_entries(calibre_db, search_param, order, state, join, 0, _EXPORT_BATCH_LIMIT,
+                                            tag_filter=tag_filter)
 
     def export_cell(val, c):
         if c == 'is_archived':

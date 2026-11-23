@@ -84,16 +84,6 @@
                             </form>
                         </div>
                     {% endif %}
-                    {% if current_user.role_edit() %}
-                        <div class="btn-group" role="group" aria-label="Edit book">
-                            <a href="{{ url_for('edit-book.show_edit_book', book_id=entry.id) }}"
-                               class="btn btn-primary edit-btn-tooltip" id="edit_book" role="button"
-                               data-toggle="tooltip" title="{{ _('Edit Metadata') }}" data-placement="bottom" data-viewport=".btn-toolbar">
-                                <span class="edit-book-icon" data-toggle="tooltip" title="{{ _('Edit Metadata') }}"
-                                      data-placement="bottom" data-viewport=".btn-toolbar"></span> {{ _('Edit Metadata') }}
-                            </a>
-                        </div>
-                    {% endif %}
                     {% if current_user.role_download() %}
                         {% if entry.data|length %}
                             <div class="btn-group downloadBtn" role="group">

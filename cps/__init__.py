@@ -344,7 +344,9 @@ def create_app():
     # Load the library registry from the app DB registry table.
     global main_library_id
     global _registry_settings_path
-    _registry_settings_path = cli_param.settings_path
+    # Bookhouse: fall back to the actual app.db path when no -p was given
+    # (test scripts / default CLI), so runtime-registered libraries attach right.
+    _registry_settings_path = cli_param.settings_path or ub.app_DB_path
     lib_registries.clear()
     # Bookhouse: default library (replaces the legacy 'main' concept).
     # The row matching config_calibre_dir (if any) bootstraps as default;

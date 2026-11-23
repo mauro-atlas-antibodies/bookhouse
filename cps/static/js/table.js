@@ -434,6 +434,15 @@ $(function() {
         });
     });*/
 
+    function addTagFilterParams(params) {
+        var tagSel = document.getElementById('tag_filter');
+        if (tagSel && tagSel.selectedOptions.length) {
+            Array.prototype.forEach.call(tagSel.selectedOptions, function (o) { params.append('include_tag', o.value); });
+            var notBox = document.getElementById('tag_filter_not');
+            if (notBox && notBox.checked) params.append('tag_mode', 'not');
+        }
+    }
+
     $("#export_books_list").click(function () {
         var options = $("#books-table").bootstrapTable('getOptions');
         var visible = $("#books-table").bootstrapTable('getVisibleColumns')
@@ -444,10 +453,12 @@ $(function() {
         if (options.sortName) params.append('sort', options.sortName);
         if (options.sortOrder) params.append('order', options.sortOrder);
         params.append('columns', visible.join(','));
+        addTagFilterParams(params);
         window.location = getPath() + "/books/export?" + params.toString();
     });
 
-    $("#export_books_list_json").click(function () {
+    // Bookhouse: tag filter — populate + trigger refresh
+    function exportTableParams(extra) {
         var options = $("#books-table").bootstrapTable('getOptions');
         var visible = $("#books-table").bootstrapTable('getVisibleColumns')
             .map(function (a) { return a.field; })
@@ -457,6 +468,42 @@ $(function() {
         if (options.sortName) params.append('sort', options.sortName);
         if (options.sortOrder) params.append('order', options.sortOrder);
         params.append('columns', visible.join(','));
+        params.forEach(function (v, k) { });
+        return params;
+    }
+    function tagFilterParams() {
+        var tagSel = document.getElementById('tag_filter');
+        var notBox = document.getElementById('tag_filter_not');
+        if (tagSel && tagSel.selectedOptions.length) {
+            Array.prototype.forEach.call(tagSel.selectedOptions, function (o) { window.location.search.length; });
+        }
+    }
+    function refreshBooksTable() {
+        $("#books-table").bootstrapTable('refresh');
+    }
+    fetch(getPath() + "/ajax/all_tags").then(function (r) { return r.json(); }).then(function (tags) {
+        var sel = document.getElementById('tag_filter');
+        if (!sel) return;
+        tags.forEach(function (t) {
+            var opt = document.createElement('option');
+            opt.value = t.id;
+            opt.textContent = t.name;
+            sel.appendChild(opt);
+        });
+    });
+    $('#tag_filter').on('change', refreshBooksTable);
+    $('#tag_filter_not').on('change', refreshBooksTable);
+
+    $("#export_books_list_json").click(function () {        var options = $("#books-table").bootstrapTable('getOptions');
+        var visible = $("#books-table").bootstrapTable('getVisibleColumns')
+            .map(function (a) { return a.field; })
+            .filter(function (f) { return f && f !== 'state'; });
+        var params = new URLSearchParams();
+        if (options.searchText) params.append('search', options.searchText);
+        if (options.sortName) params.append('sort', options.sortName);
+        if (options.sortOrder) params.append('order', options.sortOrder);
+        params.append('columns', visible.join(','));
+        addTagFilterParams(params);
         params.append('format', 'json');
         window.location = getPath() + "/books/export?" + params.toString();
     });
@@ -1349,6 +1396,14 @@ function deleteUser(a, id){
 function queryParams(params)
 {
     params.state = JSON.stringify(selections);
+    var tagSel = document.getElementById('tag_filter');
+    if (tagSel && tagSel.selectedOptions.length) {
+        params.include_tag = Array.prototype.map.call(tagSel.selectedOptions, function (o) { return o.value; });
+        var notBox = document.getElementById('tag_filter_not');
+        if (notBox && notBox.checked) {
+            params.tag_mode = 'not';
+        }
+    }
     return params;
 }
 

@@ -7,6 +7,26 @@
       <p>{{_('Search Term:')}} {{adv_searchterm}}</p>
     {% else %}
       <h2>{{result_count}} {{_('Results for:')}} {{adv_searchterm}}</h2>
+      {% if page == 'search' %}
+      <div class="btn-group">
+        <div class="btn btn-default" onclick="location='{{ url_for('web.export_books', columns='title,authors,tags,publishers,series,series_index,languages') }}&search={{ request.args.get('query', '') | urlencode }}'">
+          <span class="glyphicon glyphicon-download"></span> CSV
+        </div>
+        <div class="btn btn-default" onclick="location='{{ url_for('web.export_books', columns='title,authors,tags,publishers,series,series_index,languages', format='json') }}&search={{ request.args.get('query', '') | urlencode }}'">
+          <span class="glyphicon glyphicon-download"></span> JSON
+        </div>
+      </div>
+      {% endif %}
+      {% if page == 'advsearch' %}
+      <div class="btn-group">
+        <div class="btn btn-default" onclick="location='{{ url_for('web.export_books', columns='title,authors,tags,publishers,series,series_index,languages', adv=1) }}'">
+          <span class="glyphicon glyphicon-download"></span> CSV
+        </div>
+        <div class="btn btn-default" onclick="location='{{ url_for('web.export_books', columns='title,authors,tags,publishers,series,series_index,languages', format='json', adv=1) }}'">
+          <span class="glyphicon glyphicon-download"></span> JSON
+        </div>
+      </div>
+      {% endif %}
       {% if current_user.is_authenticated %}
         {% if current_user.shelf.all() or g.shelves_access %}
           <div id="shelf-actions" class="btn-toolbar" role="toolbar">
