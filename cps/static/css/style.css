@@ -613,10 +613,7 @@ body.bh-scheme-great_northern .navbar-default .navbar-nav > li > a {
   color: #d9a441;
 }
 body.bh-scheme-great_northern .navbar-brand .bookhouse-brand { color: #d9a441; }
-/* Bookhouse round 3: dark GREEN sidebar menu (user pick) */
-body.bh-scheme-great_northern .col-sm-2 {
-  background-color: #1e3a27;
-}
+/* Bookhouse round 3 (superseded by .bh-sidebar rule below) */
 body.bh-scheme-great_northern .navigation {
   background-color: transparent;
 }
@@ -867,10 +864,7 @@ body.bh-scheme-great_northern .btn .glyphicon,
 body.bh-scheme-great_northern .btn .caret {
   color: #ffcf6e;
 }
-/* sidebar green extends the full page height */
-body.bh-scheme-great_northern .col-sm-2 {
-  min-height: calc(100vh - 40px);
-}
+
 
 /* Red Room: readable tables (clear rows + dark text), book titles visible */
 body.bh-scheme-red_room #books-table,
@@ -944,14 +938,7 @@ body.bh-scheme-red_room .fixed-table-toolbar .dropdown-menu > li > a:focus {
 
 /* b. Great Northern: full-height green applies ONLY to the sidebar nav
    (nav.navigation) — not to any other .col-sm-2 (covers, entry grids) */
-body.bh-scheme-great_northern .col-sm-2 {
-  min-height: 0;
-  background-color: transparent;
-}
-body.bh-scheme-great_northern nav.navigation {
-  background-color: #1e3a27;
-  min-height: calc(100vh - 40px);
-}
+
 /* CBD: author/series/tags list entries — kill inherited huge heights */
 body.bh-scheme-great_northern .discover .entry,
 body.bh-scheme-great_northern .discover .author {
@@ -968,4 +955,11 @@ body.bh-scheme-ghostwood .btn {
 body.bh-scheme-ghostwood .btn .glyphicon,
 body.bh-scheme-ghostwood .btn .caret {
   color: #f6f9f4;
+}
+
+/* Bookhouse GN: full-height green sidebar — .bh-sidebar exists only on the
+   sidebar column, so nothing else (covers/entries/tables) can be hit */
+body.bh-scheme-great_northern .bh-sidebar {
+  background-color: #1e3a27;
+  min-height: calc(100vh - 40px);
 }
