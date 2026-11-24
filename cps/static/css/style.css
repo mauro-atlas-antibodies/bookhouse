@@ -963,3 +963,9 @@ body.bh-scheme-great_northern .bh-sidebar {
   background-color: #1e3a27;
   min-height: calc(100vh - 40px);
 }
+
+/* Bookhouse: spacing between Advanced Search and the library title/selector */
+.navbar-nav > li.lib-info {
+  padding-left: 15px;
+  padding-right: 8px;
+}

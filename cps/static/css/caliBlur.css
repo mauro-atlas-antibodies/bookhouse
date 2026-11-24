@@ -8118,3 +8118,10 @@ li.lib-info .lib-text .lib-desc {
   max-width: 320px;
   display: block;
 }
+
+/* Bookhouse: spacing between Advanced Search and the library title/selector */
+.main-nav > li.lib-info,
+.navbar-nav > li.lib-info {
+  padding-left: 15px;
+  padding-right: 8px;
+}
